@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="feature2">
+    <title>Feature 2: Reporting</title>
+    <body>
+        <p>Generate comprehensive reports with our advanced reporting engine.</p>
+        <section>
+            <title>Report Types</title>
+            <ul>
+                <li>Summary reports</li>
+                <li>Detailed analysis</li>
+                <li>Custom visualizations</li>
+            </ul>
+        </section>
+    </body>
+</topic>

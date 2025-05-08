@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE map PUBLIC "-//OASIS//DTD DITA Map//EN" "map.dtd">
+<map>
+    <title>Product User Guide</title>
+    <topicref href="../topics/introduction.dita" navtitle="Introduction"/>
+    <topicref href="../topics/getting-started.dita" navtitle="Getting Started"/>
+    <topicref href="../topics/features.dita" navtitle="Features">
+        <topicref href="../topics/feature1.dita" navtitle="Feature 1"/>
+        <topicref href="../topics/feature2.dita" navtitle="Feature 2"/>
+    </topicref>
+    <topicref href="../topics/troubleshooting.dita" navtitle="Troubleshooting"/>
+</map>

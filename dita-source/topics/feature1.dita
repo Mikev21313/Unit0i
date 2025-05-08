@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="feature1">
+    <title>Feature 1: Data Processing</title>
+    <body>
+        <p>The data processing feature allows you to transform and analyze your data quickly.</p>
+        <section>
+            <title>Key Capabilities</title>
+            <ul>
+                <li>Fast data import from multiple sources</li>
+                <li>Advanced filtering options</li>
+                <li>Customizable transformation rules</li>
+            </ul>
+        </section>
+    </body>
+</topic>
