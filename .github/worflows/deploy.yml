@@ -1,4 +1,4 @@
-name: Deploy Storyline Editor to GitHub Pages
+name: Deploy Storyline Editor to GitHub 
 
 on:
   push:
