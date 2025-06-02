@@ -1,9 +1,7 @@
-name: Deploy Storyline Editor to GitHub 
+name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
     branches: [ main ]
   workflow_dispatch:
 
@@ -12,38 +10,34 @@ permissions:
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout repository
+    - name: Checkout
       uses: actions/checkout@v4
+    
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
     
-    - name: Create package.json
+    - name: Create complete project structure
       run: |
+        # Create package.json
         cat > package.json << 'EOF'
         {
-          "name": "storyline-editor",
+          "name": "unit0i-storyline-editor",
           "version": "1.0.0",
-          "private": true,
           "type": "module",
           "scripts": {
             "dev": "vite",
             "build": "vite build",
-            "preview": "vite preview",
-            "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
-            "type-check": "tsc --noEmit"
+            "preview": "vite preview"
           },
           "dependencies": {
             "react": "^18.2.0",
@@ -53,13 +47,8 @@ jobs:
           "devDependencies": {
             "@types/react": "^18.2.15",
             "@types/react-dom": "^18.2.7",
-            "@typescript-eslint/eslint-plugin": "^6.0.0",
-            "@typescript-eslint/parser": "^6.0.0",
             "@vitejs/plugin-react": "^4.0.3",
             "autoprefixer": "^10.4.14",
-            "eslint": "^8.45.0",
-            "eslint-plugin-react-hooks": "^4.6.0",
-            "eslint-plugin-react-refresh": "^0.4.3",
             "postcss": "^8.4.24",
             "tailwindcss": "^3.3.0",
             "typescript": "^5.0.2",
@@ -67,25 +56,22 @@ jobs:
           }
         }
         EOF
-    
-    - name: Create Vite config
-      run: |
+
+        # Create vite.config.ts
         cat > vite.config.ts << 'EOF'
         import { defineConfig } from 'vite'
         import react from '@vitejs/plugin-react'
         
         export default defineConfig({
           plugins: [react()],
-          base: '/storyline-editor/',
+          base: '/Unit0i/',
           build: {
-            outDir: 'dist',
-            assetsDir: 'assets'
+            outDir: 'dist'
           }
         })
         EOF
-    
-    - name: Create TypeScript config
-      run: |
+
+        # Create tsconfig.json
         cat > tsconfig.json << 'EOF'
         {
           "compilerOptions": {
@@ -101,60 +87,38 @@ jobs:
             "noEmit": true,
             "jsx": "react-jsx",
             "strict": true,
-            "noUnusedLocals": true,
-            "noUnusedParameters": true,
+            "noUnusedLocals": false,
+            "noUnusedParameters": false,
             "noFallthroughCasesInSwitch": true
           },
-          "include": ["src"],
-          "references": [{ "path": "./tsconfig.node.json" }]
+          "include": ["src"]
         }
         EOF
-    
-    - name: Create TypeScript Node config
-      run: |
-        cat > tsconfig.node.json << 'EOF'
-        {
-          "compilerOptions": {
-            "composite": true,
-            "skipLibCheck": true,
-            "module": "ESNext",
-            "moduleResolution": "bundler",
-            "allowSyntheticDefaultImports": true
-          },
-          "include": ["vite.config.ts"]
-        }
-        EOF
-    
-    - name: Create Tailwind config
-      run: |
+
+        # Create tailwind config
         cat > tailwind.config.js << 'EOF'
         /** @type {import('tailwindcss').Config} */
         export default {
-          content: [
-            "./index.html",
-            "./src/**/*.{js,ts,jsx,tsx}",
-          ],
-          theme: {
-            extend: {},
-          },
-          plugins: [],
+          content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+          theme: { extend: {} },
+          plugins: []
         }
         EOF
-    
-    - name: Create PostCSS config
-      run: |
+
+        # Create postcss config
         cat > postcss.config.js << 'EOF'
         export default {
           plugins: {
             tailwindcss: {},
-            autoprefixer: {},
-          },
+            autoprefixer: {}
+          }
         }
         EOF
-    
-    - name: Create source directory structure
-      run: |
+
+        # Create src directory
         mkdir -p src
+
+        # Create index.css
         cat > src/index.css << 'EOF'
         @tailwind base;
         @tailwind components;
@@ -162,32 +126,62 @@ jobs:
         
         body {
           margin: 0;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-            'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-            sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
         }
         EOF
-    
-    - name: Create main component
-      run: |
-        cat > src/App.tsx << 'EOF'
-        import React, { useState, useRef, useCallback } from 'react';
-        import { Play, Pause, SkipBack, SkipForward, Plus, Trash2, Upload, Download, Eye, Settings, Type, Image, Square, Circle } from 'lucide-react';
+
+        # Create main.tsx
+        cat > src/main.tsx << 'EOF'
+        import React from 'react'
+        import ReactDOM from 'react-dom/client'
+        import App from './App'
+        import './index.css'
         
-        const StorylineEditor = () => {
-          const [slides, setSlides] = useState([
-            { id: 1, title: 'Welcome', content: 'Welcome to your presentation', background: '#ffffff', elements: [] }
+        ReactDOM.createRoot(document.getElementById('root')!).render(
+          <React.StrictMode>
+            <App />
+          </React.StrictMode>
+        )
+        EOF
+
+        # Create App.tsx
+        cat > src/App.tsx << 'EOF'
+        import React, { useState, useRef } from 'react';
+        import { Play, Pause, SkipBack, SkipForward, Plus, Trash2, Download, Eye, Settings, Type, Image, Square, Circle } from 'lucide-react';
+        
+        interface Slide {
+          id: number;
+          title: string;
+          content: string;
+          background: string;
+          elements: SlideElement[];
+        }
+        
+        interface SlideElement {
+          id: number;
+          type: string;
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+          content: string;
+          style: any;
+        }
+        
+        const StorylineEditor: React.FC = () => {
+          const [slides, setSlides] = useState<Slide[]>([
+            { id: 1, title: 'Welcome to Storyline Editor', content: 'Welcome to your presentation', background: '#ffffff', elements: [] }
           ]);
           const [currentSlide, setCurrentSlide] = useState(0);
           const [isPlaying, setIsPlaying] = useState(false);
-          const [selectedElement, setSelectedElement] = useState(null);
-          const [draggedElement, setDraggedElement] = useState(null);
-          const canvasRef = useRef(null);
+          const [selectedElement, setSelectedElement] = useState<number | null>(null);
+          const [draggedElement, setDraggedElement] = useState<number | null>(null);
+          const canvasRef = useRef<HTMLDivElement>(null);
         
           const addSlide = () => {
-            const newSlide = {
+            const newSlide: Slide = {
               id: slides.length + 1,
               title: `Slide ${slides.length + 1}`,
               content: '',
@@ -208,14 +202,14 @@ jobs:
           };
         
           const addElement = (type: string) => {
-            const newElement = {
+            const newElement: SlideElement = {
               id: Date.now(),
               type,
               x: 100,
               y: 100,
               width: type === 'text' ? 200 : 150,
               height: type === 'text' ? 50 : 100,
-              content: type === 'text' ? 'New Text' : '',
+              content: type === 'text' ? 'New Text Element' : '',
               style: {
                 backgroundColor: type === 'rectangle' ? '#3b82f6' : type === 'circle' ? '#ef4444' : 'transparent',
                 color: type === 'text' ? '#000000' : '#ffffff',
@@ -232,12 +226,12 @@ jobs:
             setSlides(updatedSlides);
           };
         
-          const updateElement = (elementId: number, updates: any) => {
+          const updateElement = (elementId: number, updates: Partial<SlideElement>) => {
             const updatedSlides = slides.map((slide, index) => 
               index === currentSlide 
                 ? {
                     ...slide,
-                    elements: slide.elements.map((el: any) => 
+                    elements: slide.elements.map(el => 
                       el.id === elementId ? { ...el, ...updates } : el
                     )
                   }
@@ -251,7 +245,7 @@ jobs:
               index === currentSlide 
                 ? {
                     ...slide,
-                    elements: slide.elements.filter((el: any) => el.id !== elementId)
+                    elements: slide.elements.filter(el => el.id !== elementId)
                   }
                 : slide
             );
@@ -259,7 +253,7 @@ jobs:
             setSelectedElement(null);
           };
         
-          const handleElementMouseDown = (e: React.MouseEvent, element: any) => {
+          const handleElementMouseDown = (e: React.MouseEvent, element: SlideElement) => {
             e.preventDefault();
             setSelectedElement(element.id);
             setDraggedElement(element.id);
@@ -267,11 +261,10 @@ jobs:
         
           const handleCanvasMouseMove = (e: React.MouseEvent) => {
             if (draggedElement && canvasRef.current) {
-              const rect = (canvasRef.current as HTMLElement).getBoundingClientRect();
+              const rect = canvasRef.current.getBoundingClientRect();
               const x = e.clientX - rect.left;
               const y = e.clientY - rect.top;
-              
-              updateElement(draggedElement, { x: x - 75, y: y - 25 });
+              updateElement(draggedElement, { x: Math.max(0, x - 75), y: Math.max(0, y - 25) });
             }
           };
         
@@ -282,9 +275,7 @@ jobs:
           const exportPresentation = () => {
             const dataStr = JSON.stringify(slides, null, 2);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            
             const exportFileDefaultName = 'storyline-presentation.json';
-            
             const linkElement = document.createElement('a');
             linkElement.setAttribute('href', dataUri);
             linkElement.setAttribute('download', exportFileDefaultName);
@@ -308,61 +299,61 @@ jobs:
           };
         
           return (
-            <div className="h-screen bg-gray-900 text-white flex">
+            <div className="h-screen bg-gray-900 text-white flex overflow-hidden">
               {/* Sidebar */}
               <div className="w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
-                {/* Toolbar */}
                 <div className="p-4 border-b border-gray-700">
                   <h1 className="text-xl font-bold mb-4">Storyline Editor</h1>
                   <div className="flex gap-2 mb-4">
                     <button
                       onClick={togglePlayback}
-                      className="p-2 bg-blue-600 hover:bg-blue-700 rounded"
+                      className="p-2 bg-blue-600 hover:bg-blue-700 rounded transition-colors"
                     >
                       {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                     </button>
                     <button
                       onClick={prevSlide}
-                      className="p-2 bg-gray-600 hover:bg-gray-700 rounded"
+                      disabled={currentSlide === 0}
+                      className="p-2 bg-gray-600 hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
                     >
                       <SkipBack className="w-4 h-4" />
                     </button>
                     <button
                       onClick={nextSlide}
-                      className="p-2 bg-gray-600 hover:bg-gray-700 rounded"
+                      disabled={currentSlide === slides.length - 1}
+                      className="p-2 bg-gray-600 hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
                     >
                       <SkipForward className="w-4 h-4" />
                     </button>
                   </div>
                   
-                  {/* Element Tools */}
                   <div className="space-y-2">
                     <h3 className="text-sm font-semibold">Add Elements</h3>
                     <div className="grid grid-cols-2 gap-1">
                       <button
                         onClick={() => addElement('text')}
-                        className="p-2 bg-gray-600 hover:bg-gray-700 rounded text-xs flex items-center gap-1"
+                        className="p-2 bg-gray-600 hover:bg-gray-700 rounded text-xs flex items-center gap-1 transition-colors"
                       >
                         <Type className="w-3 h-3" />
                         Text
                       </button>
                       <button
                         onClick={() => addElement('image')}
-                        className="p-2 bg-gray-600 hover:bg-gray-700 rounded text-xs flex items-center gap-1"
+                        className="p-2 bg-gray-600 hover:bg-gray-700 rounded text-xs flex items-center gap-1 transition-colors"
                       >
                         <Image className="w-3 h-3" />
                         Image
                       </button>
                       <button
                         onClick={() => addElement('rectangle')}
-                        className="p-2 bg-gray-600 hover:bg-gray-700 rounded text-xs flex items-center gap-1"
+                        className="p-2 bg-gray-600 hover:bg-gray-700 rounded text-xs flex items-center gap-1 transition-colors"
                       >
                         <Square className="w-3 h-3" />
                         Box
                       </button>
                       <button
                         onClick={() => addElement('circle')}
-                        className="p-2 bg-gray-600 hover:bg-gray-700 rounded text-xs flex items-center gap-1"
+                        className="p-2 bg-gray-600 hover:bg-gray-700 rounded text-xs flex items-center gap-1 transition-colors"
                       >
                         <Circle className="w-3 h-3" />
                         Circle
@@ -371,14 +362,13 @@ jobs:
                   </div>
                 </div>
         
-                {/* Slide List */}
                 <div className="flex-1 overflow-y-auto">
                   <div className="p-4">
                     <div className="flex justify-between items-center mb-2">
                       <h3 className="text-sm font-semibold">Slides</h3>
                       <button
                         onClick={addSlide}
-                        className="p-1 bg-green-600 hover:bg-green-700 rounded"
+                        className="p-1 bg-green-600 hover:bg-green-700 rounded transition-colors"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -387,7 +377,7 @@ jobs:
                       {slides.map((slide, index) => (
                         <div
                           key={slide.id}
-                          className={`p-3 rounded cursor-pointer border-2 transition-colors ${
+                          className={`p-3 rounded cursor-pointer border-2 transition-all ${
                             currentSlide === index 
                               ? 'border-blue-500 bg-blue-900/30' 
                               : 'border-gray-600 hover:border-gray-500'
@@ -407,7 +397,7 @@ jobs:
                                   e.stopPropagation();
                                   deleteSlide(index);
                                 }}
-                                className="p-1 text-red-400 hover:text-red-300"
+                                className="p-1 text-red-400 hover:text-red-300 transition-colors"
                               >
                                 <Trash2 className="w-3 h-3" />
                               </button>
@@ -419,21 +409,19 @@ jobs:
                   </div>
                 </div>
         
-                {/* Export */}
                 <div className="p-4 border-t border-gray-700">
                   <button
                     onClick={exportPresentation}
-                    className="w-full p-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center justify-center gap-2"
+                    className="w-full p-2 bg-purple-600 hover:bg-purple-700 rounded flex items-center justify-center gap-2 transition-colors"
                   >
                     <Download className="w-4 h-4" />
-                    Export
+                    Export JSON
                   </button>
                 </div>
               </div>
         
               {/* Main Canvas */}
               <div className="flex-1 flex flex-col">
-                {/* Canvas Header */}
                 <div className="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center">
                   <div>
                     <h2 className="text-lg font-semibold">{slides[currentSlide]?.title}</h2>
@@ -442,20 +430,19 @@ jobs:
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button className="p-2 bg-gray-600 hover:bg-gray-700 rounded">
+                    <button className="p-2 bg-gray-600 hover:bg-gray-700 rounded transition-colors">
                       <Eye className="w-4 h-4" />
                     </button>
-                    <button className="p-2 bg-gray-600 hover:bg-gray-700 rounded">
+                    <button className="p-2 bg-gray-600 hover:bg-gray-700 rounded transition-colors">
                       <Settings className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
         
-                {/* Canvas Area */}
                 <div className="flex-1 bg-gray-700 p-8 overflow-auto">
                   <div 
                     ref={canvasRef}
-                    className="relative bg-white rounded-lg shadow-lg mx-auto"
+                    className="relative bg-white rounded-lg shadow-lg mx-auto select-none"
                     style={{ 
                       width: '800px', 
                       height: '600px',
@@ -465,13 +452,12 @@ jobs:
                     onMouseUp={handleCanvasMouseUp}
                     onMouseLeave={handleCanvasMouseUp}
                   >
-                    {/* Slide Elements */}
-                    {slides[currentSlide]?.elements.map((element: any) => (
+                    {slides[currentSlide]?.elements.map((element: SlideElement) => (
                       <div
                         key={element.id}
-                        className={`absolute cursor-move border-2 transition-colors ${
+                        className={`absolute cursor-move border-2 transition-all ${
                           selectedElement === element.id 
-                            ? 'border-blue-500' 
+                            ? 'border-blue-500 shadow-lg' 
                             : 'border-transparent hover:border-gray-300'
                         }`}
                         style={{
@@ -489,25 +475,24 @@ jobs:
                             contentEditable
                             className="w-full h-full p-2 outline-none"
                             style={{ color: element.style.color, fontSize: element.style.fontSize }}
-                            onBlur={(e) => updateElement(element.id, { content: e.target.textContent })}
+                            onBlur={(e) => updateElement(element.id, { content: e.currentTarget.textContent || '' })}
                             suppressContentEditableWarning={true}
                           >
                             {element.content}
                           </div>
                         )}
                         {element.type === 'image' && (
-                          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
-                            Image Placeholder
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm border-2 border-dashed border-gray-400">
+                            Click to upload image
                           </div>
                         )}
                         {(element.type === 'rectangle' || element.type === 'circle') && (
                           <div className="w-full h-full"></div>
                         )}
                         
-                        {/* Delete button for selected element */}
                         {selectedElement === element.id && (
                           <button
-                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
                               deleteElement(element.id);
@@ -518,6 +503,12 @@ jobs:
                         )}
                       </div>
                     ))}
+                    
+                    {slides[currentSlide]?.elements.length === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center text-gray-400 text-lg">
+                        Click "Add Elements" to start creating your presentation
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -527,32 +518,15 @@ jobs:
         
         export default StorylineEditor;
         EOF
-    
-    - name: Create main entry point
-      run: |
-        cat > src/main.tsx << 'EOF'
-        import React from 'react'
-        import ReactDOM from 'react-dom/client'
-        import App from './App'
-        import './index.css'
-        
-        ReactDOM.createRoot(document.getElementById('root')!).render(
-          <React.StrictMode>
-            <App />
-          </React.StrictMode>,
-        )
-        EOF
-    
-    - name: Create HTML template
-      run: |
+
+        # Create index.html
         cat > index.html << 'EOF'
         <!doctype html>
         <html lang="en">
           <head>
             <meta charset="UTF-8" />
-            <link rel="icon" type="image/svg+xml" href="/vite.svg" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <title>Storyline Editor - Articulate 360 Alternative</title>
+            <title>Unit0i Storyline Editor</title>
             <meta name="description" content="Lightweight presentation editor similar to Articulate 360 Storyline" />
           </head>
           <body>
@@ -561,56 +535,21 @@ jobs:
           </body>
         </html>
         EOF
-    
-    - name: Create README
-      run: |
-        cat > README.md << 'EOF'
-        # Storyline Editor
-        
-        A lightweight presentation editor similar to Articulate 360 Storyline, without the learning assessment features.
-        
-        ## Features
-        
-        - Slide-based presentation interface
-        - Drag-and-drop element editing
-        - Multiple element types (text, images, shapes)
-        - Real-time preview
-        - Export functionality
-        - Responsive design
-        
-        ## Development
-        
-        ```bash
-        npm install
-        npm run dev
-        ```
-        
-        ## Build
-        
-        ```bash
-        npm run build
-        ```
-        
-        ## Deploy
-        
-        This project is automatically deployed to GitHub Pages via GitHub Actions.
-        EOF
-    
+
     - name: Install dependencies
       run: npm install
-    
+
     - name: Build application
       run: npm run build
-    
-    - name: Upload build artifacts
+
+    - name: Upload Pages artifact
       uses: actions/upload-pages-artifact@v3
       with:
         path: ./dist
 
   deploy:
-    needs: build
+    needs: build-and-deploy
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     
     environment:
       name: github-pages
