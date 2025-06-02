@@ -214,6 +214,8 @@ jobs:
           }
           EOF
 
+      - name: Generate Tailwind config
+        run: |
           # Generate tailwind.config.js
           cat > tailwind.config.js << 'EOF'
           /** @type {import('tailwindcss').Config} */
@@ -229,6 +231,8 @@ jobs:
           }
           EOF
 
+      - name: Generate PostCSS config
+        run: |
           # Generate postcss.config.js
           cat > postcss.config.js << 'EOF'
           module.exports = {
@@ -239,6 +243,8 @@ jobs:
           }
           EOF
 
+      - name: Generate gitignore
+        run: |
           # Generate .gitignore
           cat > .gitignore << 'EOF'
           # Dependencies
@@ -283,6 +289,8 @@ jobs:
           .env.production.local
           EOF
 
+      - name: Generate README
+        run: |
           # Generate README.md
           cat > README.md << 'EOF'
           # E-Learning Authoring Tool
@@ -1404,6 +1412,8 @@ jobs:
           }
           EOF
 
+      - name: Generate Player vite config
+        run: |
           cat > apps/player/vite.config.ts << 'EOF'
           import { defineConfig } from 'vite';
           import react from '@vitejs/plugin-react';
@@ -1424,6 +1434,8 @@ jobs:
           });
           EOF
 
+      - name: Generate Player tsconfig
+        run: |
           cat > apps/player/tsconfig.json << 'EOF'
           {
             "extends": "../../tsconfig.json",
@@ -1445,6 +1457,8 @@ jobs:
           }
           EOF
 
+      - name: Generate Player HTML and source files
+        run: |
           cat > apps/player/public/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
@@ -1460,6 +1474,8 @@ jobs:
           </html>
           EOF
 
+      - name: Generate Player main.tsx
+        run: |
           cat > apps/player/src/main.tsx << 'EOF'
           import React from 'react';
           import ReactDOM from 'react-dom/client';
@@ -1473,6 +1489,8 @@ jobs:
           );
           EOF
 
+      - name: Generate Player App.tsx
+        run: |
           cat > apps/player/src/App.tsx << 'EOF'
           export function App() {
             return (
@@ -1488,6 +1506,8 @@ jobs:
           }
           EOF
 
+      - name: Generate Player CSS
+        run: |
           cat > apps/player/src/index.css << 'EOF'
           @tailwind base;
           @tailwind components;
@@ -1519,6 +1539,8 @@ jobs:
           }
           EOF
 
+      - name: Generate UI TypeScript files
+        run: |
           cat > packages/ui/src/index.tsx << 'EOF'
           import React from 'react';
 
@@ -1527,6 +1549,8 @@ jobs:
           };
           EOF
 
+      - name: Generate UI tsconfig
+        run: |
           cat > packages/ui/tsconfig.json << 'EOF'
           {
             "extends": "../../tsconfig.json",
@@ -1555,6 +1579,8 @@ jobs:
           }
           EOF
 
+      - name: Generate SCORM source files
+        run: |
           cat > packages/scorm-engine/src/index.ts << 'EOF'
           export class SCORMEngine {
             generatePackage(project: any, options: any) {
@@ -1575,6 +1601,8 @@ jobs:
           }
           EOF
 
+      - name: Generate SCORM tsconfig
+        run: |
           cat > packages/scorm-engine/tsconfig.json << 'EOF'
           {
             "extends": "../../tsconfig.json",
@@ -1586,6 +1614,8 @@ jobs:
           }
           EOF
 
+      - name: Generate Interactions package files
+        run: |
           # Generate Interactions package
           cat > packages/interactions/package.json << 'EOF'
           {
@@ -1603,6 +1633,8 @@ jobs:
           }
           EOF
 
+      - name: Generate Interactions source files
+        run: |
           cat > packages/interactions/src/index.tsx << 'EOF'
           import React from 'react';
 
@@ -1619,6 +1651,8 @@ jobs:
           };
           EOF
 
+      - name: Generate Interactions tsconfig
+        run: |
           cat > packages/interactions/tsconfig.json << 'EOF'
           {
             "extends": "../../tsconfig.json",
@@ -1649,6 +1683,8 @@ jobs:
           });
           EOF
 
+      - name: Generate unit test file
+        run: |
           # Generate unit test
           cat > apps/editor/src/stores/projectStore.test.ts << 'EOF'
           import { describe, it, expect } from 'vitest';
@@ -1676,6 +1712,8 @@ jobs:
           });
           EOF
 
+      - name: Generate vitest config
+        run: |
           # Generate vitest config
           cat > vitest.config.ts << 'EOF'
           import { defineConfig } from 'vitest/config';
