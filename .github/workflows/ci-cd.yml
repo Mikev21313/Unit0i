@@ -1712,7 +1712,7 @@ jobs:
           });
           EOF
 
-      - name: Generate vitest config
+      - name: Generate test setup files
         run: |
           # Generate vitest config
           cat > vitest.config.ts << 'EOF'
@@ -1737,6 +1737,7 @@ jobs:
 
       - name: Generate performance and smoke tests
         run: |
+          # Generate performance test for editor
           cat > tests/performance/editor.js << 'EOF'
           import http from 'k6/http';
           import { check, sleep } from 'k6';
