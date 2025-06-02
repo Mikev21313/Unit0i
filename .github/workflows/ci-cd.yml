@@ -316,7 +316,7 @@ jobs:
 
           ### Installation
 
-          ```bash
+          \`\`\`bash
           # Clone the repository
           git clone https://github.com/yourusername/elearning-authoring-tool.git
 
@@ -325,19 +325,19 @@ jobs:
 
           # Start development server
           pnpm dev
-          ```
+          \`\`\`
 
           ### Development
 
-          - `pnpm dev` - Start all apps in development mode
-          - `pnpm dev:editor` - Start only the editor app
-          - `pnpm build` - Build all apps for production
-          - `pnpm test` - Run tests
-          - `pnpm lint` - Run linting
+          - \`pnpm dev\` - Start all apps in development mode
+          - \`pnpm dev:editor\` - Start only the editor app
+          - \`pnpm build\` - Build all apps for production
+          - \`pnpm test\` - Run tests
+          - \`pnpm lint\` - Run linting
 
           ## Project Structure
 
-          ```
+          \`\`\`
           ├── apps/
           │   ├── editor/     # Main authoring application
           │   ├── player/     # Course runtime/player
@@ -348,7 +348,7 @@ jobs:
           │   ├── scorm-engine/   # SCORM package generator
           │   └── interactions/   # Interactive components
           └── tests/          # E2E and performance tests
-          ```
+          \`\`\`
 
           ## License
 
@@ -1697,7 +1697,7 @@ jobs:
           });
           EOF
 
-      - name: Generate performance test
+      - name: Generate performance and smoke tests
         run: |
           cat > tests/performance/editor.js << 'EOF'
           import http from 'k6/http';
@@ -1730,6 +1730,21 @@ jobs:
           git config --local user.name "GitHub Action"
           git add -A
           git commit -m "Generate source code via GitHub Actions" || echo "No changes to commit"
+
+      - name: Verify generated structure before upload
+        run: |
+          echo "=== Verifying generated project structure ==="
+          echo "Root files:"
+          ls -la
+          echo ""
+          echo "Apps directory:"
+          ls -la apps/ || echo "No apps directory"
+          echo ""
+          echo "Editor app:"
+          ls -la apps/editor/src/ || echo "No editor src"
+          echo ""
+          echo "Packages:"
+          ls -la packages/ || echo "No packages directory"
 
       - name: Upload source code artifact
         uses: actions/upload-artifact@v4
@@ -1905,16 +1920,16 @@ jobs:
           path: dist/
 
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v4
 
       - name: Upload to Pages
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist/
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
 
   # Job 6: Create Release Package
   create-release:
@@ -1945,19 +1960,19 @@ jobs:
           ## Quick Start
 
           1. Install dependencies:
-             ```bash
+             \`\`\`bash
              pnpm install
-             ```
+             \`\`\`
 
           2. Start development server:
-             ```bash
+             \`\`\`bash
              pnpm dev
-             ```
+             \`\`\`
 
           3. Build for production:
-             ```bash
+             \`\`\`bash
              pnpm build
-             ```
+             \`\`\`
 
           ## Features
 
