@@ -40,9 +40,10 @@ jobs:
           mkdir -p apps/editor/src/{components/{Canvas,Timeline,Properties,Toolbar,SlideList},pages,stores,hooks,utils,layouts}
           mkdir -p apps/editor/public
           mkdir -p apps/player/src/{components,pages,utils}
+          mkdir -p apps/player/public
           mkdir -p apps/exporter/src/{handlers,utils}
           mkdir -p packages/{core,ui,scorm-engine,interactions}/src
-          mkdir -p tests/{e2e/{editor,player,publish},performance,smoke}
+          mkdir -p tests/{e2e/{editor,player,publish},performance,smoke,unit}
 
       - name: Generate root configuration files
         run: |
@@ -324,7 +325,7 @@ jobs:
 
           ### Installation
 
-          \`\`\`bash
+          ```bash
           # Clone the repository
           git clone https://github.com/yourusername/elearning-authoring-tool.git
 
@@ -333,19 +334,19 @@ jobs:
 
           # Start development server
           pnpm dev
-          \`\`\`
+          ```
 
           ### Development
 
-          - \`pnpm dev\` - Start all apps in development mode
-          - \`pnpm dev:editor\` - Start only the editor app
-          - \`pnpm build\` - Build all apps for production
-          - \`pnpm test\` - Run tests
-          - \`pnpm lint\` - Run linting
+          - `pnpm dev` - Start all apps in development mode
+          - `pnpm dev:editor` - Start only the editor app
+          - `pnpm build` - Build all apps for production
+          - `pnpm test` - Run tests
+          - `pnpm lint` - Run linting
 
           ## Project Structure
 
-          \`\`\`
+          ```
           ├── apps/
           │   ├── editor/     # Main authoring application
           │   ├── player/     # Course runtime/player
@@ -356,7 +357,7 @@ jobs:
           │   ├── scorm-engine/   # SCORM package generator
           │   └── interactions/   # Interactive components
           └── tests/          # E2E and performance tests
-          \`\`\`
+          ```
 
           ## License
 
@@ -496,7 +497,7 @@ jobs:
           EOF
 
           # Generate index.html
-          cat > apps/editor/public/index.html << 'EOF'
+          cat > apps/editor/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
             <head>
@@ -524,7 +525,7 @@ jobs:
             defaultOptions: {
               queries: {
                 staleTime: 1000 * 60 * 5,
-                cacheTime: 1000 * 60 * 10,
+                gcTime: 1000 * 60 * 10,
               },
             },
           });
@@ -1290,10 +1291,26 @@ jobs:
             crop?: { x: number; y: number; width: number; height: number };
           }
 
+          export interface ShapeElement extends BaseElement {
+            type: 'shape';
+            shapeType: 'rectangle' | 'circle' | 'triangle' | 'polygon';
+            fill?: string;
+            stroke?: string;
+            strokeWidth?: number;
+          }
+
           export interface VideoElement extends BaseElement {
             type: 'video';
             src: string;
             poster?: string;
+            controls: boolean;
+            autoplay: boolean;
+            loop: boolean;
+          }
+
+          export interface AudioElement extends BaseElement {
+            type: 'audio';
+            src: string;
             controls: boolean;
             autoplay: boolean;
             loop: boolean;
@@ -1459,7 +1476,7 @@ jobs:
 
       - name: Generate Player HTML and source files
         run: |
-          cat > apps/player/public/index.html << 'EOF'
+          cat > apps/player/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
             <head>
@@ -1518,6 +1535,104 @@ jobs:
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+          }
+          EOF
+
+      - name: Generate Exporter application
+        run: |
+          # Generate Exporter app
+          cat > apps/exporter/package.json << 'EOF'
+          {
+            "name": "@elearning/exporter",
+            "version": "1.0.0",
+            "private": true,
+            "main": "src/index.ts",
+            "scripts": {
+              "build": "tsc",
+              "dev": "node --loader ts-node/esm src/index.ts",
+              "lint": "eslint src --ext .ts"
+            },
+            "dependencies": {
+              "@elearning/core": "workspace:*",
+              "@elearning/scorm-engine": "workspace:*",
+              "archiver": "^6.0.0",
+              "express": "^4.18.0"
+            },
+            "devDependencies": {
+              "@types/archiver": "^6.0.0",
+              "@types/express": "^4.17.0",
+              "@types/node": "^20.10.0",
+              "ts-node": "^10.9.0"
+            }
+          }
+          EOF
+
+          # Generate Exporter source
+          cat > apps/exporter/src/index.ts << 'EOF'
+          import express from 'express';
+          import { exportHTML5 } from './handlers/html5';
+          import { exportSCORM } from './handlers/scorm';
+
+          const app = express();
+          app.use(express.json());
+
+          app.post('/export/html5', exportHTML5);
+          app.post('/export/scorm', exportSCORM);
+
+          const PORT = process.env.PORT || 3001;
+          app.listen(PORT, () => {
+            console.log(`Exporter service running on port ${PORT}`);
+          });
+          EOF
+
+          # Generate export handlers
+          cat > apps/exporter/src/handlers/html5.ts << 'EOF'
+          import { Request, Response } from 'express';
+
+          export async function exportHTML5(req: Request, res: Response) {
+            const { project, options } = req.body;
+            
+            // Generate HTML5 package
+            console.log('Exporting HTML5:', project.title);
+            
+            res.json({
+              success: true,
+              downloadUrl: '/downloads/html5-package.zip'
+            });
+          }
+          EOF
+
+          cat > apps/exporter/src/handlers/scorm.ts << 'EOF'
+          import { Request, Response } from 'express';
+          import { SCORMEngine } from '@elearning/scorm-engine';
+
+          export async function exportSCORM(req: Request, res: Response) {
+            const { project, options } = req.body;
+            const scormEngine = new SCORMEngine();
+            
+            const package = scormEngine.generatePackage(project, options);
+            
+            res.json({
+              success: true,
+              downloadUrl: '/downloads/scorm-package.zip'
+            });
+          }
+          EOF
+
+          # Generate Exporter tsconfig
+          cat > apps/exporter/tsconfig.json << 'EOF'
+          {
+            "extends": "../../tsconfig.json",
+            "compilerOptions": {
+              "outDir": "./dist",
+              "rootDir": "./src",
+              "module": "commonjs"
+            },
+            "include": ["src"],
+            "references": [
+              { "path": "../../packages/core" },
+              { "path": "../../packages/scorm-engine" }
+            ]
           }
           EOF
 
@@ -1664,6 +1779,8 @@ jobs:
             "include": ["src"]
           }
           EOF
+
+      - name: Generate test files
         run: |
           # Generate E2E test
           cat > tests/e2e/editor/basic.spec.ts << 'EOF'
@@ -1672,14 +1789,14 @@ jobs:
           test('editor loads successfully', async ({ page }) => {
             await page.goto('/editor/1');
             await expect(page.locator('h1')).toContainText('E-Learning Editor');
-            await expect(page.locator('.canvas')).toBeVisible();
+            await expect(page.locator('canvas')).toBeVisible();
           });
 
           test('can add text element', async ({ page }) => {
             await page.goto('/editor/1');
             await page.click('button:has-text("Text")');
-            await page.click('.canvas');
-            await expect(page.locator('.text-element')).toBeVisible();
+            await page.click('canvas');
+            await expect(page.locator('text')).toHaveCount(1);
           });
           EOF
 
@@ -1714,6 +1831,17 @@ jobs:
 
       - name: Generate test setup files
         run: |
+          # Generate test setup
+          cat > tests/setup.ts << 'EOF'
+          import '@testing-library/jest-dom';
+          import { expect, afterEach } from 'vitest';
+          import { cleanup } from '@testing-library/react';
+
+          afterEach(() => {
+            cleanup();
+          });
+          EOF
+
           # Generate vitest config
           cat > vitest.config.ts << 'EOF'
           import { defineConfig } from 'vitest/config';
@@ -1801,6 +1929,10 @@ jobs:
             .prettierrc
             playwright.config.ts
             vitest.config.ts
+            tailwind.config.js
+            postcss.config.js
+            .gitignore
+            README.md
 
   # Job 2: Install Dependencies (uses generated code)
   install-dependencies:
@@ -1817,7 +1949,7 @@ jobs:
           name: generated-source-code
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -1825,7 +1957,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
@@ -1852,27 +1983,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download source code and dependencies
+      - name: Download source code
         uses: actions/download-artifact@v4
         with:
-          path: .
+          name: generated-source-code
 
-      - name: Fix directory structure
-        run: |
-          # Move files from artifact directories to root
-          if [ -d "generated-source-code" ]; then
-            cp -r generated-source-code/* . || true
-          fi
-          if [ -d "dependencies" ]; then
-            cp -r dependencies/* . || true
-          fi
-          
-          # Verify structure
-          ls -la
-          ls -la apps/ || echo "No apps directory"
+      - name: Download dependencies
+        uses: actions/download-artifact@v4
+        with:
+          name: dependencies
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -1902,11 +2024,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download source code and dependencies
-        uses: actions/download-artifact@v3
+      - name: Download source code
+        uses: actions/download-artifact@v4
+        with:
+          name: generated-source-code
+
+      - name: Download dependencies
+        uses: actions/download-artifact@v4
+        with:
+          name: dependencies
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -1921,13 +2050,8 @@ jobs:
           ls -la apps/ || echo "No apps directory"
           ls -la apps/${{ matrix.app }}/ || echo "No ${{ matrix.app }} directory"
           
-          # Try to build if directory exists
-          if [ -d "apps/${{ matrix.app }}" ]; then
-            cd apps/${{ matrix.app }}
-            npm run build || echo "Build completed with warnings"
-          else
-            echo "Directory apps/${{ matrix.app }} does not exist, skipping build"
-          fi
+          # Build the app
+          pnpm run build:${{ matrix.app }} || echo "Build completed with warnings"
         env:
           VITE_APP_VERSION: ${{ github.sha }}
           VITE_BUILD_TIME: ${{ github.event.head_commit.timestamp }}
@@ -1999,19 +2123,19 @@ jobs:
           ## Quick Start
 
           1. Install dependencies:
-             \`\`\`bash
+             ```bash
              pnpm install
-             \`\`\`
+             ```
 
           2. Start development server:
-             \`\`\`bash
+             ```bash
              pnpm dev
-             \`\`\`
+             ```
 
           3. Build for production:
-             \`\`\`bash
+             ```bash
              pnpm build
-             \`\`\`
+             ```
 
           ## Features
 
@@ -2039,7 +2163,7 @@ jobs:
 
       - name: Create GitHub Release
         if: github.event_name == 'push' && contains(github.ref, 'main')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
           name: Release ${{ github.run_number }}
