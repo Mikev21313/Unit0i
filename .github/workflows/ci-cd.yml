@@ -1,7 +1,4 @@
-name: "E-Learning Tool - Size-Optimized Working Version"
-
-# 🎓 E-Learning Authoring Tool - Fixed for GitHub Actions Size Limits
-# This version breaks large code blocks into smaller manageable pieces
+name: "E-Learning Tool - Clean Working Version"
 
 on:
   push:
@@ -47,10 +44,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: project-structure
-          path: ./
+          path: .
           retention-days: 1
 
-  # Step 2: Generate Editor App Code
+  # Step 2: Generate Editor Code
   generate-editor-code:
     name: "Generate Editor Application Code"
     runs-on: ubuntu-latest
@@ -59,29 +56,8 @@ jobs:
       - name: "Download project structure"
         uses: actions/download-artifact@v4
         with:
-          name: project-structure  
-          path: ./
-
-      - name: "Verify structure"
-        run: |
-          echo "Directory contents after download:"
-          ls -la
-          if [ ! -d "player" ]; then
-            echo "❌ Player directory missing!"
-            exit 1
-          fi
-          echo "✅ Project structure verified"
-          path: ./
-
-      - name: "Verify structure"
-        run: |
-          echo "Directory contents after download:"
-          ls -la
-          if [ ! -d "editor" ]; then
-            echo "❌ Editor directory missing!"
-            exit 1
-          fi
-          echo "✅ Project structure verified"
+          name: project-structure
+          path: .
 
       - name: "Generate editor App.tsx - Part 1"
         run: |
@@ -107,12 +83,7 @@ jobs:
                 onCanvasClick(x, y);
               }
             };
-          EOF
 
-      - name: "Generate editor App.tsx - Part 2"
-        run: |
-          cd editor
-          cat >> src/App.tsx << 'EOF'
             return (
               <div 
                 ref={canvasRef}
@@ -154,12 +125,7 @@ jobs:
                     {element.content || 'Text Element'}
                   </div>
                 ))}
-          EOF
-
-      - name: "Generate editor App.tsx - Part 3"
-        run: |
-          cd editor
-          cat >> src/App.tsx << 'EOF'
+                
                 {elements.length === 0 && (
                   <div style={{
                     position: 'absolute',
@@ -177,6 +143,12 @@ jobs:
               </div>
             );
           };
+          EOF
+
+      - name: "Generate editor App.tsx - Part 2"
+        run: |
+          cd editor
+          cat >> src/App.tsx << 'EOF'
 
           const ProjectDashboard: React.FC = () => {
             const navigate = useNavigate();
@@ -196,12 +168,7 @@ jobs:
                 slides: 5
               }
             ]);
-          EOF
 
-      - name: "Generate editor App.tsx - Part 4"
-        run: |
-          cd editor
-          cat >> src/App.tsx << 'EOF'
             const createProject = () => {
               const newProject = {
                 id: Date.now().toString(),
@@ -256,12 +223,7 @@ jobs:
                       </div>
                     </div>
                   ))}
-          EOF
-
-      - name: "Generate editor App.tsx - Part 5"
-        run: |
-          cd editor
-          cat >> src/App.tsx << 'EOF'
+                  
                   <div className="project-card add-card" onClick={createProject}>
                     <div className="add-content">
                       <div className="add-icon">➕</div>
@@ -273,6 +235,12 @@ jobs:
               </div>
             );
           };
+          EOF
+
+      - name: "Generate editor App.tsx - Part 3"
+        run: |
+          cd editor
+          cat >> src/App.tsx << 'EOF'
 
           const CourseEditor: React.FC = () => {
             const { projectId } = useParams();
@@ -301,12 +269,7 @@ jobs:
               setElements([...elements, newElement]);
               setElementCounter(elementCounter + 1);
             };
-          EOF
 
-      - name: "Generate editor App.tsx - Part 6"
-        run: |
-          cd editor
-          cat >> src/App.tsx << 'EOF'
             const selectElement = (id: string) => {
               setElements(elements.map(el => ({
                 ...el,
@@ -328,6 +291,12 @@ jobs:
             };
 
             const selectedElement = elements.find(el => el.id === selectedElementId);
+          EOF
+
+      - name: "Generate editor App.tsx - Part 4"
+        run: |
+          cd editor
+          cat >> src/App.tsx << 'EOF'
 
             return (
               <div className="editor">
@@ -363,12 +332,7 @@ jobs:
                     )}
                   </div>
                 </div>
-          EOF
 
-      - name: "Generate editor App.tsx - Part 7"
-        run: |
-          cd editor
-          cat >> src/App.tsx << 'EOF'
                 <div className="editor-content">
                   <div className="sidebar">
                     <h3>Slides</h3>
@@ -434,12 +398,7 @@ jobs:
                       </div>
                     )}
                   </div>
-          EOF
 
-      - name: "Generate editor App.tsx - Part 8"
-        run: |
-          cd editor
-          cat >> src/App.tsx << 'EOF'
                   <div className="canvas-container">
                     <div className="canvas-header">
                       <h3>Canvas</h3>
@@ -483,52 +442,9 @@ jobs:
           export default App;
           EOF
 
-      - name: "Upload editor code"
-        uses: actions/upload-artifact@v4
-        with:
-          name: editor-code
-          path: ./
-          retention-days: 1
-
-  # Step 3: Generate Editor CSS
-  generate-editor-css:
-    name: "Generate Editor CSS"
-    runs-on: ubuntu-latest
-    needs: generate-editor-code
-    steps:
-      - name: "Download editor code"
-        uses: actions/download-artifact@v4
-        with:
-          name: editor-code
-          path: ./
-
-      - name: "Verify directory structure"
+      - name: "Generate editor CSS"
         run: |
-          echo "Current directory contents:"
-          ls -la
-          echo "Looking for editor directory:"
-          find . -name "editor" -type d || echo "No editor directory found"
-          echo "All directories:"
-          find . -type d
-
-      - name: "Generate editor CSS - Part 1 (Base Styles)"
-        run: |
-          # Ensure we're in the right directory
-          if [ ! -d "editor" ]; then
-            echo "❌ Editor directory not found!"
-            echo "Available directories:"
-            ls -la
-            exit 1
-          fi
-          
-          echo "✅ Editor directory found, generating CSS..."
           cd editor
-          
-          # Verify we have the src directory
-          if [ ! -d "src" ]; then
-            echo "❌ src directory not found in editor!"
-            exit 1
-          fi
           cat > src/App.css << 'EOF'
           .App {
             text-align: left;
@@ -588,12 +504,7 @@ jobs:
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
             border-color: #3498db;
           }
-          EOF
 
-      - name: "Generate editor CSS - Part 2 (Project Cards)"
-        run: |
-          cd editor
-          cat >> src/App.css << 'EOF'
           .project-preview {
             display: flex;
             align-items: center;
@@ -656,12 +567,7 @@ jobs:
             color: #bdc3c7;
             margin-bottom: 16px;
           }
-          EOF
 
-      - name: "Generate editor CSS - Part 3 (Editor Layout)"
-        run: |
-          cd editor
-          cat >> src/App.css << 'EOF'
           /* Editor Styles */
           .editor {
             height: 100vh;
@@ -728,12 +634,7 @@ jobs:
             display: flex;
             gap: 12px;
           }
-          EOF
 
-      - name: "Generate editor CSS - Part 4 (Sidebar and Canvas)"
-        run: |
-          cd editor
-          cat >> src/App.css << 'EOF'
           .editor-content {
             flex: 1;
             display: flex;
@@ -828,12 +729,7 @@ jobs:
             grid-template-columns: 1fr 1fr;
             gap: 8px;
           }
-          EOF
 
-      - name: "Generate editor CSS - Part 5 (Canvas and Buttons)"
-        run: |
-          cd editor
-          cat >> src/App.css << 'EOF'
           .no-selection {
             text-align: center;
             padding: 32px 16px;
@@ -910,12 +806,7 @@ jobs:
             font-size: 0.9rem;
             color: #6c757d;
           }
-          EOF
 
-      - name: "Generate editor CSS - Part 6 (Button Styles and Responsive)"
-        run: |
-          cd editor
-          cat >> src/App.css << 'EOF'
           /* Button Styles */
           .btn-primary {
             background: #007bff;
@@ -1021,14 +912,14 @@ jobs:
           }
           EOF
 
-      - name: "Upload complete editor"
+      - name: "Upload editor code"
         uses: actions/upload-artifact@v4
         with:
-          name: complete-editor
-          path: ./
+          name: editor-complete
+          path: .
           retention-days: 1
 
-  # Step 4: Generate Player App (Similar breakdown)
+  # Step 3: Generate Player Code
   generate-player-code:
     name: "Generate Player Application"
     runs-on: ubuntu-latest
@@ -1038,6 +929,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: project-structure
+          path: .
 
       - name: "Generate player App.tsx"
         run: |
@@ -1089,12 +981,7 @@ jobs:
               }
             ] as Slide[]
           };
-          EOF
 
-      - name: "Generate player App component"
-        run: |
-          cd player
-          cat >> src/App.tsx << 'EOF'
           const App: React.FC = () => {
             const [courseStarted, setCourseStarted] = useState(false);
             const [currentSlide, setCurrentSlide] = useState(0);
@@ -1163,12 +1050,7 @@ jobs:
             const handleWordClick = (index: number) => {
               setClickedWords(new Set([...clickedWords, index]));
             };
-          EOF
 
-      - name: "Generate player JSX structure"
-        run: |
-          cd player
-          cat >> src/App.tsx << 'EOF'
             if (!courseStarted) {
               return (
                 <div className="start-screen">
@@ -1226,12 +1108,7 @@ jobs:
                     </button>
                   </div>
                 </div>
-          EOF
 
-      - name: "Complete player component"
-        run: |
-          cd player
-          cat >> src/App.tsx << 'EOF'
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${progress}%` }} />
                   <div className="progress-text">{Math.round(progress)}% Complete</div>
@@ -1331,7 +1208,7 @@ jobs:
           export default App;
           EOF
 
-      - name: "Generate comprehensive player CSS"
+      - name: "Generate player CSS"
         run: |
           cd player
           cat > src/App.css << 'EOF'
@@ -1396,18 +1273,18 @@ jobs:
           }
           EOF
 
-      - name: "Upload complete player"
+      - name: "Upload player code"
         uses: actions/upload-artifact@v4
         with:
-          name: complete-player
-          path: ./
+          name: player-complete
+          path: .
           retention-days: 1
 
-  # Step 5: Build Applications
+  # Step 4: Build Applications
   build-applications:
     name: "Build Applications"
     runs-on: ubuntu-latest
-    needs: [generate-editor-css, generate-player-code]
+    needs: [generate-editor-code, generate-player-code]
     strategy:
       matrix:
         app: [editor, player]
@@ -1416,31 +1293,23 @@ jobs:
       - name: "Download complete application"
         uses: actions/download-artifact@v4
         with:
-          name: complete-${{ matrix.app }}
-          path: ./
+          name: ${{ matrix.app }}-complete
+          path: .
 
-      - name: "Verify and build application"
+      - name: "Build application"
         run: |
-          echo "Current directory contents:"
           ls -la
-          echo "Looking for ${{ matrix.app }} directory:"
-          if [ ! -d "${{ matrix.app }}" ]; then
-            echo "❌ ${{ matrix.app }} directory not found!"
-            exit 1
-          fi
-          echo "✅ Found ${{ matrix.app }} directory"
           cd ${{ matrix.app }}
-          echo "Building application..."
           npm run build
 
       - name: "Upload build"
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.app }}
-          path: ${{ matrix.app }}/build/
+          path: ${{ matrix.app }}/build
           retention-days: 7
 
-  # Step 6: Deploy
+  # Step 5: Deploy
   deploy:
     name: "Deploy to GitHub Pages"
     runs-on: ubuntu-latest
@@ -1454,17 +1323,17 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: "Download builds"
+      - name: "Download editor build"
         uses: actions/download-artifact@v4
         with:
           name: build-editor
-          path: dist/
+          path: dist
 
       - name: "Download player build"
         uses: actions/download-artifact@v4
         with:
           name: build-player
-          path: dist/player/
+          path: dist/player
 
       - name: "Create navigation"
         run: |
@@ -1488,7 +1357,7 @@ jobs:
       - name: "Upload to Pages"
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist/
+          path: dist
 
       - name: "Deploy to GitHub Pages"
         id: deployment
