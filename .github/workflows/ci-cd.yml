@@ -212,7 +212,7 @@ jobs:
 
           # Generate .eslintrc.js
           cat > .eslintrc.js << 'EOF'
-          module.exports = {
+          export default {
             root: true,
             parser: '@typescript-eslint/parser',
             extends: [
@@ -308,7 +308,7 @@ jobs:
           # Generate tailwind.config.js
           cat > tailwind.config.js << 'EOF'
           /** @type {import('tailwindcss').Config} */
-          module.exports = {
+          export default {
             content: [
               "./apps/*/src/**/*.{js,ts,jsx,tsx}",
               "./packages/*/src/**/*.{js,ts,jsx,tsx}"
@@ -322,7 +322,7 @@ jobs:
 
           # Generate postcss.config.js
           cat > postcss.config.js << 'EOF'
-          module.exports = {
+          export default {
             plugins: {
               tailwindcss: {},
               autoprefixer: {},
@@ -478,9 +478,9 @@ jobs:
             resolve: {
               alias: {
                 '@': path.resolve(__dirname, './src'),
-                '@elearning/core': path.resolve(__dirname, '../../packages/core/src'),
-                '@elearning/ui': path.resolve(__dirname, '../../packages/ui/src'),
-                '@elearning/interactions': path.resolve(__dirname, '../../packages/interactions/src'),
+                '@elearning/core': path.resolve(__dirname, '../../packages/core/dist'),
+                '@elearning/ui': path.resolve(__dirname, '../../packages/ui/dist'),
+                '@elearning/interactions': path.resolve(__dirname, '../../packages/interactions/dist'),
               },
             },
             server: {
@@ -1625,14 +1625,17 @@ jobs:
           {
             "name": "@elearning/core",
             "version": "1.0.0",
-            "main": "./src/index.ts",
-            "types": "./src/index.ts",
+            "type": "module",
+            "main": "./dist/index.js",
+            "types": "./dist/index.d.ts",
             "scripts": {
               "build": "tsc",
+              "clean": "rimraf dist",
               "lint": "eslint src --ext .ts"
             },
             "devDependencies": {
-              "typescript": "^5.3.0"
+              "typescript": "^5.3.0",
+              "rimraf": "^5.0.0"
             }
           }
           EOF
@@ -1819,6 +1822,9 @@ jobs:
           {
             "extends": "../../tsconfig.json",
             "compilerOptions": {
+              "composite": true,
+              "declaration": true,
+              "declarationMap": true,
               "outDir": "./dist",
               "rootDir": "./src"
             },
@@ -1870,8 +1876,8 @@ jobs:
             resolve: {
               alias: {
                 '@': path.resolve(__dirname, './src'),
-                '@elearning/core': path.resolve(__dirname, '../../packages/core/src'),
-                '@elearning/interactions': path.resolve(__dirname, '../../packages/interactions/src'),
+                '@elearning/core': path.resolve(__dirname, '../../packages/core/dist'),
+                '@elearning/interactions': path.resolve(__dirname, '../../packages/interactions/dist'),
               },
             },
             server: {
@@ -2030,17 +2036,20 @@ jobs:
           {
             "name": "@elearning/ui",
             "version": "1.0.0",
-            "main": "./src/index.tsx",
-            "types": "./src/index.tsx",
+            "type": "module",
+            "main": "./dist/index.js",
+            "types": "./dist/index.d.ts",
             "scripts": {
               "build": "tsc",
+              "clean": "rimraf dist",
               "lint": "eslint src --ext .ts,.tsx"
             },
             "dependencies": {
               "react": "^18.2.0"
             },
             "devDependencies": {
-              "typescript": "^5.3.0"
+              "typescript": "^5.3.0",
+              "rimraf": "^5.0.0"
             }
           }
           EOF
@@ -2073,6 +2082,9 @@ jobs:
             "extends": "../../tsconfig.json",
             "compilerOptions": {
               "jsx": "react-jsx",
+              "composite": true,
+              "declaration": true,
+              "declarationMap": true,
               "outDir": "./dist",
               "rootDir": "./src"
             },
@@ -2085,14 +2097,17 @@ jobs:
           {
             "name": "@elearning/scorm-engine",
             "version": "1.0.0",
-            "main": "./src/index.ts",
-            "types": "./src/index.ts",
+            "type": "module",
+            "main": "./dist/index.js",
+            "types": "./dist/index.d.ts",
             "scripts": {
               "build": "tsc",
+              "clean": "rimraf dist",
               "lint": "eslint src --ext .ts"
             },
             "devDependencies": {
-              "typescript": "^5.3.0"
+              "typescript": "^5.3.0",
+              "rimraf": "^5.0.0"
             }
           }
           EOF
@@ -2152,6 +2167,9 @@ jobs:
           {
             "extends": "../../tsconfig.json",
             "compilerOptions": {
+              "composite": true,
+              "declaration": true,
+              "declarationMap": true,
               "outDir": "./dist",
               "rootDir": "./src"
             },
@@ -2164,17 +2182,20 @@ jobs:
           {
             "name": "@elearning/interactions",
             "version": "1.0.0",
-            "main": "./src/index.tsx",
-            "types": "./src/index.tsx",
+            "type": "module",
+            "main": "./dist/index.js",
+            "types": "./dist/index.d.ts",
             "scripts": {
               "build": "tsc",
+              "clean": "rimraf dist",
               "lint": "eslint src --ext .ts,.tsx"
             },
             "dependencies": {
               "react": "^18.2.0"
             },
             "devDependencies": {
-              "typescript": "^5.3.0"
+              "typescript": "^5.3.0",
+              "rimraf": "^5.0.0"
             }
           }
           EOF
@@ -2275,6 +2296,9 @@ jobs:
             "extends": "../../tsconfig.json",
             "compilerOptions": {
               "jsx": "react-jsx",
+              "composite": true,
+              "declaration": true,
+              "declarationMap": true,
               "outDir": "./dist",
               "rootDir": "./src"
             },
@@ -2434,9 +2458,9 @@ jobs:
             resolve: {
               alias: {
                 '@': path.resolve(__dirname, './src'),
-                '@elearning/core': path.resolve(__dirname, './packages/core/src'),
-                '@elearning/ui': path.resolve(__dirname, './packages/ui/src'),
-                '@elearning/interactions': path.resolve(__dirname, './packages/interactions/src'),
+                '@elearning/core': path.resolve(__dirname, './packages/core/dist'),
+                '@elearning/ui': path.resolve(__dirname, './packages/ui/dist'),
+                '@elearning/interactions': path.resolve(__dirname, './packages/interactions/dist'),
               },
             },
           });
@@ -2924,6 +2948,38 @@ jobs:
           fi
           
           echo "✅ App structure verified"
+
+      - name: "Build packages first"
+        run: |
+          set -euo pipefail
+          
+          echo "🏗️ Building packages first..."
+          
+          # Add node_modules/.bin to PATH
+          export PATH="$PWD/node_modules/.bin:$PATH"
+          
+          # Build packages in dependency order
+          echo "📦 Building core package..."
+          cd packages/core
+          npx tsc
+          cd ../..
+          
+          echo "📦 Building UI package..."
+          cd packages/ui
+          npx tsc
+          cd ../..
+          
+          echo "📦 Building interactions package..."
+          cd packages/interactions
+          npx tsc
+          cd ../..
+          
+          echo "📦 Building SCORM engine package..."
+          cd packages/scorm-engine
+          npx tsc
+          cd ../..
+          
+          echo "✅ Packages built successfully"
 
       - name: "Build ${{ matrix.app }} with direct commands"
         id: build-app
