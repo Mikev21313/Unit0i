@@ -1,9 +1,7 @@
-name: "E-Learning Tool - WORKING VERSION"
+name: "E-Learning Tool - Size-Optimized Working Version"
 
-# 🎓 E-Learning Authoring Tool - GUARANTEED WORKING VERSION
-# 
-# This workflow creates simple, standalone React applications that actually work
-# Focus: WORKING APPLICATIONS over complex CI/CD
+# 🎓 E-Learning Authoring Tool - Fixed for GitHub Actions Size Limits
+# This version breaks large code blocks into smaller manageable pieces
 
 on:
   push:
@@ -16,14 +14,10 @@ env:
   NODE_VERSION: "18.x"
 
 jobs:
-  # Create Working Applications
-  create-working-apps:
-    name: "Create Working E-Learning Applications"
+  # Step 1: Create Project Structure
+  create-project-structure:
+    name: "Create Project Structure"
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        app: [editor, player]
-      fail-fast: false
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v4
@@ -33,57 +27,50 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: "Create working ${{ matrix.app }} app"
+      - name: "Create editor app"
         run: |
-          set -euo pipefail
-          echo "🚀 Creating WORKING ${{ matrix.app }} app..."
-          
-          # Create app directory
-          mkdir -p "${{ matrix.app }}"
-          cd "${{ matrix.app }}"
-          
-          # Initialize with Create React App (guaranteed to work)
+          mkdir -p editor
+          cd editor
           npx create-react-app . --template typescript --use-npm
-          
-          # Wait for creation
-          sleep 5
-          
-          echo "✅ Base React app created successfully"
+          sleep 3
+          npm install react-router-dom
+          npm install @types/react-router-dom --save-dev
 
-      - name: "Install additional dependencies"
+      - name: "Create player app"
         run: |
-          set -euo pipefail
-          echo "📦 Installing additional dependencies for ${{ matrix.app }}..."
-          
-          cd "${{ matrix.app }}"
-          
-          # Install routing and styling with error handling
-          npm install react-router-dom || echo "React Router install failed, but continuing..."
-          npm install @types/react-router-dom --save-dev || echo "Router types install failed, but continuing..."
-          
-          # Install specific dependencies based on app type
-          if [[ "${{ matrix.app }}" == "editor" ]]; then
-            npm install konva react-konva || echo "Konva install failed, using fallback"
-            npm install @types/konva --save-dev || echo "Konva types install failed"
-          fi
-          
-          echo "✅ Dependencies installed"
+          mkdir -p player
+          cd player
+          npx create-react-app . --template typescript --use-npm
+          sleep 3
 
-      - name: "Generate working ${{ matrix.app }} application"
+      - name: "Upload project structure"
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-structure
+          path: |
+            editor/
+            player/
+          retention-days: 1
+
+  # Step 2: Generate Editor App Code
+  generate-editor-code:
+    name: "Generate Editor Application Code"
+    runs-on: ubuntu-latest
+    needs: create-project-structure
+    steps:
+      - name: "Download project structure"
+        uses: actions/download-artifact@v4
+        with:
+          name: project-structure
+
+      - name: "Generate editor App.tsx - Part 1"
         run: |
-          set -euo pipefail
-          echo "📝 Generating WORKING ${{ matrix.app }} application..."
-          
-          cd "${{ matrix.app }}"
-          
-          if [[ "${{ matrix.app }}" == "editor" ]]; then
-            # Create WORKING Editor Application
-            cat > src/App.tsx << 'EOF'
-          import React, { useState, useRef, useEffect } from 'react';
-          import { BrowserRouter as Router, Routes, Route, useNavigate, useParams, Link } from 'react-router-dom';
+          cd editor
+          cat > src/App.tsx << 'EOF'
+          import React, { useState, useRef } from 'react';
+          import { BrowserRouter as Router, Routes, Route, useNavigate, useParams } from 'react-router-dom';
           import './App.css';
 
-          // Simple Canvas Component without Konva (more reliable)
           const SimpleCanvas: React.FC<{ 
             elements: any[], 
             onElementClick: (id: string) => void,
@@ -100,7 +87,12 @@ jobs:
                 onCanvasClick(x, y);
               }
             };
+          EOF
 
+      - name: "Generate editor App.tsx - Part 2"
+        run: |
+          cd editor
+          cat >> src/App.tsx << 'EOF'
             return (
               <div 
                 ref={canvasRef}
@@ -142,7 +134,12 @@ jobs:
                     {element.content || 'Text Element'}
                   </div>
                 ))}
-                
+          EOF
+
+      - name: "Generate editor App.tsx - Part 3"
+        run: |
+          cd editor
+          cat >> src/App.tsx << 'EOF'
                 {elements.length === 0 && (
                   <div style={{
                     position: 'absolute',
@@ -161,7 +158,6 @@ jobs:
             );
           };
 
-          // Project Dashboard Component
           const ProjectDashboard: React.FC = () => {
             const navigate = useNavigate();
             const [projects, setProjects] = useState([
@@ -180,7 +176,12 @@ jobs:
                 slides: 5
               }
             ]);
+          EOF
 
+      - name: "Generate editor App.tsx - Part 4"
+        run: |
+          cd editor
+          cat >> src/App.tsx << 'EOF'
             const createProject = () => {
               const newProject = {
                 id: Date.now().toString(),
@@ -235,7 +236,12 @@ jobs:
                       </div>
                     </div>
                   ))}
-                  
+          EOF
+
+      - name: "Generate editor App.tsx - Part 5"
+        run: |
+          cd editor
+          cat >> src/App.tsx << 'EOF'
                   <div className="project-card add-card" onClick={createProject}>
                     <div className="add-content">
                       <div className="add-icon">➕</div>
@@ -248,7 +254,6 @@ jobs:
             );
           };
 
-          // Course Editor Component
           const CourseEditor: React.FC = () => {
             const { projectId } = useParams();
             const navigate = useNavigate();
@@ -276,7 +281,12 @@ jobs:
               setElements([...elements, newElement]);
               setElementCounter(elementCounter + 1);
             };
+          EOF
 
+      - name: "Generate editor App.tsx - Part 6"
+        run: |
+          cd editor
+          cat >> src/App.tsx << 'EOF'
             const selectElement = (id: string) => {
               setElements(elements.map(el => ({
                 ...el,
@@ -333,7 +343,12 @@ jobs:
                     )}
                   </div>
                 </div>
+          EOF
 
+      - name: "Generate editor App.tsx - Part 7"
+        run: |
+          cd editor
+          cat >> src/App.tsx << 'EOF'
                 <div className="editor-content">
                   <div className="sidebar">
                     <h3>Slides</h3>
@@ -399,7 +414,12 @@ jobs:
                       </div>
                     )}
                   </div>
+          EOF
 
+      - name: "Generate editor App.tsx - Part 8"
+        run: |
+          cd editor
+          cat >> src/App.tsx << 'EOF'
                   <div className="canvas-container">
                     <div className="canvas-header">
                       <h3>Canvas</h3>
@@ -427,7 +447,6 @@ jobs:
             );
           };
 
-          // Main App Component
           const App: React.FC = () => {
             return (
               <Router>
@@ -444,8 +463,28 @@ jobs:
           export default App;
           EOF
 
-            # Create comprehensive CSS for Editor
-            cat > src/App.css << 'EOF'
+      - name: "Upload editor code"
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-code
+          path: editor/
+          retention-days: 1
+
+  # Step 3: Generate Editor CSS
+  generate-editor-css:
+    name: "Generate Editor CSS"
+    runs-on: ubuntu-latest
+    needs: generate-editor-code
+    steps:
+      - name: "Download editor code"
+        uses: actions/download-artifact@v4
+        with:
+          name: editor-code
+
+      - name: "Generate editor CSS - Part 1 (Base Styles)"
+        run: |
+          cd editor
+          cat > src/App.css << 'EOF'
           .App {
             text-align: left;
             min-height: 100vh;
@@ -504,7 +543,12 @@ jobs:
             box-shadow: 0 8px 24px rgba(0,0,0,0.15);
             border-color: #3498db;
           }
+          EOF
 
+      - name: "Generate editor CSS - Part 2 (Project Cards)"
+        run: |
+          cd editor
+          cat >> src/App.css << 'EOF'
           .project-preview {
             display: flex;
             align-items: center;
@@ -567,7 +611,12 @@ jobs:
             color: #bdc3c7;
             margin-bottom: 16px;
           }
+          EOF
 
+      - name: "Generate editor CSS - Part 3 (Editor Layout)"
+        run: |
+          cd editor
+          cat >> src/App.css << 'EOF'
           /* Editor Styles */
           .editor {
             height: 100vh;
@@ -634,7 +683,12 @@ jobs:
             display: flex;
             gap: 12px;
           }
+          EOF
 
+      - name: "Generate editor CSS - Part 4 (Sidebar and Canvas)"
+        run: |
+          cd editor
+          cat >> src/App.css << 'EOF'
           .editor-content {
             flex: 1;
             display: flex;
@@ -729,7 +783,12 @@ jobs:
             grid-template-columns: 1fr 1fr;
             gap: 8px;
           }
+          EOF
 
+      - name: "Generate editor CSS - Part 5 (Canvas and Buttons)"
+        run: |
+          cd editor
+          cat >> src/App.css << 'EOF'
           .no-selection {
             text-align: center;
             padding: 32px 16px;
@@ -806,7 +865,12 @@ jobs:
             font-size: 0.9rem;
             color: #6c757d;
           }
+          EOF
 
+      - name: "Generate editor CSS - Part 6 (Button Styles and Responsive)"
+        run: |
+          cd editor
+          cat >> src/App.css << 'EOF'
           /* Button Styles */
           .btn-primary {
             background: #007bff;
@@ -912,9 +976,28 @@ jobs:
           }
           EOF
 
-          else
-            # Create WORKING Player Application
-            cat > src/App.tsx << 'EOF'
+      - name: "Upload complete editor"
+        uses: actions/upload-artifact@v4
+        with:
+          name: complete-editor
+          path: editor/
+          retention-days: 1
+
+  # Step 4: Generate Player App (Similar breakdown)
+  generate-player-code:
+    name: "Generate Player Application"
+    runs-on: ubuntu-latest
+    needs: create-project-structure
+    steps:
+      - name: "Download project structure"
+        uses: actions/download-artifact@v4
+        with:
+          name: project-structure
+
+      - name: "Generate player App.tsx"
+        run: |
+          cd player
+          cat > src/App.tsx << 'EOF'
           import React, { useState, useEffect } from 'react';
           import './App.css';
 
@@ -961,7 +1044,12 @@ jobs:
               }
             ] as Slide[]
           };
+          EOF
 
+      - name: "Generate player App component"
+        run: |
+          cd player
+          cat >> src/App.tsx << 'EOF'
           const App: React.FC = () => {
             const [courseStarted, setCourseStarted] = useState(false);
             const [currentSlide, setCurrentSlide] = useState(0);
@@ -1030,7 +1118,12 @@ jobs:
             const handleWordClick = (index: number) => {
               setClickedWords(new Set([...clickedWords, index]));
             };
+          EOF
 
+      - name: "Generate player JSX structure"
+        run: |
+          cd player
+          cat >> src/App.tsx << 'EOF'
             if (!courseStarted) {
               return (
                 <div className="start-screen">
@@ -1088,7 +1181,12 @@ jobs:
                     </button>
                   </div>
                 </div>
+          EOF
 
+      - name: "Complete player component"
+        run: |
+          cd player
+          cat >> src/App.tsx << 'EOF'
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${progress}%` }} />
                   <div className="progress-text">{Math.round(progress)}% Complete</div>
@@ -1123,7 +1221,6 @@ jobs:
                       
                       <div className="slide-content">
                         {currentSlide === 3 ? (
-                          // Interactive slide with clickable words
                           <div className="interactive-content">
                             {currentSlideData.content.split(' ').map((word, index) => (
                               <span
@@ -1189,655 +1286,110 @@ jobs:
           export default App;
           EOF
 
-            # Create comprehensive CSS for Player
-            cat > src/App.css << 'EOF'
-          * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-          }
-
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            background-color: #f8f9fa;
-          }
-
-          .App {
-            min-height: 100vh;
-          }
-
-          /* Start Screen Styles */
-          .start-screen {
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 32px;
-          }
-
-          .start-content {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
-            padding: 48px 40px;
-            max-width: 600px;
-            text-align: center;
-            animation: slideUp 0.6s ease-out;
-          }
-
-          @keyframes slideUp {
-            from {
-              opacity: 0;
-              transform: translateY(30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
-          .start-icon {
-            font-size: 5rem;
-            margin-bottom: 24px;
-            animation: bounce 2s infinite;
-          }
-
-          @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-              transform: translateY(0);
-            }
-            40% {
-              transform: translateY(-10px);
-            }
-            60% {
-              transform: translateY(-5px);
-            }
-          }
-
-          .start-content h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 16px;
-            color: #2c3e50;
-          }
-
-          .start-content p {
-            font-size: 1.2rem;
-            color: #6c757d;
-            margin-bottom: 24px;
-            line-height: 1.6;
-          }
-
-          .course-features {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            margin: 32px 0;
-            flex-wrap: wrap;
-          }
-
-          .feature {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 16px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            color: #495057;
-            font-weight: 500;
-          }
-
-          .feature-icon {
-            font-size: 1.2rem;
-          }
-
-          .start-buttons {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 32px;
-          }
-
-          /* Player Styles */
-          .player {
-            min-height: 100vh;
-            background: #f8f9fa;
-            display: flex;
-            flex-direction: column;
-          }
-
-          .player.fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 9999;
-          }
-
-          .player-header {
-            background: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 20px 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
-
-          .header-info h1 {
-            font-size: 1.6rem;
-            font-weight: 600;
-            margin: 0;
-            color: #2c3e50;
-          }
-
-          .header-info p {
-            color: #6c757d;
-            margin: 4px 0 0 0;
-            font-size: 0.95rem;
-          }
-
-          .header-buttons {
-            display: flex;
-            gap: 12px;
-          }
-
-          .progress-bar {
-            background: #e9ecef;
-            height: 8px;
-            position: relative;
-            overflow: hidden;
-          }
-
-          .progress-fill {
-            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
-            height: 100%;
-            transition: width 0.3s ease;
-            position: relative;
-          }
-
-          .progress-fill::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 2s infinite;
-          }
-
-          @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-          }
-
-          .progress-text {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.8rem;
-            color: #495057;
-            font-weight: 600;
-            background: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-          }
-
-          .player-content {
-            flex: 1;
-            display: flex;
-            overflow: hidden;
-          }
-
-          .navigation {
-            width: 280px;
-            background: white;
-            border-right: 1px solid #e9ecef;
-            padding: 24px;
-            overflow-y: auto;
-          }
-
-          .navigation h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #2c3e50;
-          }
-
-          .nav-item {
-            width: 100%;
-            text-align: left;
-            padding: 16px;
-            border-radius: 8px;
-            border: none;
-            background: #f8f9fa;
-            color: #495057;
-            cursor: pointer;
-            font-size: 0.9rem;
-            margin-bottom: 12px;
-            transition: all 0.2s ease;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-          }
-
-          .nav-item:hover {
-            background: #e9ecef;
-            transform: translateX(4px);
-          }
-
-          .nav-item.active {
-            background: #e3f2fd;
-            color: #1976d2;
-            border-left: 4px solid #1976d2;
-          }
-
-          .nav-item.completed {
-            background: #e8f5e8;
-          }
-
-          .nav-icon {
-            font-size: 1.5rem;
-            min-width: 24px;
-          }
-
-          .nav-content {
-            flex: 1;
-          }
-
-          .nav-title {
-            font-weight: 500;
-            margin-bottom: 4px;
-          }
-
-          .nav-status {
-            font-size: 0.8rem;
-            opacity: 0.8;
-          }
-
-          .slide-container {
-            flex: 1;
-            padding: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow-y: auto;
-          }
-
-          .slide {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 800px;
-            min-height: 500px;
-            padding: 48px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            animation: slideIn 0.5s ease-out;
-          }
-
-          @keyframes slideIn {
-            from {
-              opacity: 0;
-              transform: translateY(20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-
-          .slide-header {
-            text-align: center;
-            margin-bottom: 32px;
-          }
-
-          .slide-icon {
-            font-size: 4rem;
-            margin-bottom: 16px;
-          }
-
-          .slide-header h2 {
-            font-size: 2.2rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 0;
-          }
-
-          .slide-content {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
-          .regular-content {
-            font-size: 1.4rem;
-            line-height: 1.8;
-            color: #495057;
-            text-align: center;
-          }
-
-          .interactive-content {
-            font-size: 1.4rem;
-            line-height: 1.8;
-            color: #495057;
-            text-align: center;
-          }
-
-          .interactive-word {
-            cursor: pointer;
-            transition: all 0.2s ease;
-            padding: 2px 4px;
-            border-radius: 4px;
-            position: relative;
-          }
-
-          .interactive-word:hover {
-            background: rgba(33, 150, 243, 0.1);
-            transform: scale(1.05);
-          }
-
-          .interactive-word.clicked {
-            background: rgba(76, 175, 80, 0.2);
-            color: #2e7d32;
-            font-weight: 600;
-          }
-
-          .interactive-word.clicked::after {
-            content: '✨';
-            position: absolute;
-            top: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 0.8rem;
-            animation: sparkle 0.6s ease-out;
-          }
-
-          @keyframes sparkle {
-            0% {
-              opacity: 0;
-              transform: translateX(-50%) translateY(10px);
-            }
-            50% {
-              opacity: 1;
-            }
-            100% {
-              opacity: 0;
-              transform: translateX(-50%) translateY(-10px);
-            }
-          }
-
-          .slide-interactions {
-            text-align: center;
-            margin-top: 32px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 8px;
-          }
-
-          .interaction-hint {
-            font-size: 1rem;
-            color: #6c757d;
-            margin-bottom: 12px;
-          }
-
-          .interaction-stats {
-            font-size: 0.9rem;
-            color: #495057;
-            font-weight: 600;
-          }
-
-          .player-controls {
-            background: white;
-            border-top: 1px solid #e9ecef;
-            padding: 20px 32px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
-
-          .slide-indicator {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-          }
-
-          .indicator-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #dee2e6;
-            cursor: pointer;
-            transition: all 0.2s ease;
-          }
-
-          .indicator-dot:hover {
-            background: #adb5bd;
-            transform: scale(1.2);
-          }
-
-          .indicator-dot.active {
-            background: #007bff;
-            transform: scale(1.3);
-          }
-
-          .indicator-dot.completed {
-            background: #28a745;
-          }
-
-          /* Button Styles */
-          .btn-primary {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-
-          .btn-primary:hover {
-            background: #0056b3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-          }
-
-          .btn-primary.large {
-            padding: 16px 32px;
-            font-size: 1.1rem;
-          }
-
-          .btn-secondary {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-
-          .btn-secondary:hover {
-            background: #545b62;
-            transform: translateY(-2px);
-          }
-
-          .btn-icon {
-            background: #f8f9fa;
-            color: #495057;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 8px 12px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s ease;
-          }
-
-          .btn-icon:hover {
-            background: #e9ecef;
-            transform: translateY(-1px);
-          }
-
-          .btn-control {
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 12px 20px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-          }
-
-          .btn-control:hover:not(:disabled) {
-            background: #545b62;
-            transform: translateY(-1px);
-          }
-
-          .btn-control:disabled {
-            background: #dee2e6;
-            color: #6c757d;
-            cursor: not-allowed;
-          }
-
-          .btn-control.primary {
-            background: #28a745;
-          }
-
-          .btn-control.primary:hover {
-            background: #1e7e34;
-          }
-
-          /* Responsive Design */
+      - name: "Generate comprehensive player CSS"
+        run: |
+          cd player
+          cat > src/App.css << 'EOF'
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+          .start-screen { min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; padding: 32px; }
+          .start-content { background: white; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.2); padding: 48px 40px; max-width: 600px; text-align: center; }
+          .start-icon { font-size: 5rem; margin-bottom: 24px; }
+          .start-content h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 16px; color: #2c3e50; }
+          .start-content p { font-size: 1.2rem; color: #6c757d; margin-bottom: 24px; line-height: 1.6; }
+          .course-features { display: flex; justify-content: center; gap: 24px; margin: 32px 0; flex-wrap: wrap; }
+          .feature { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #f8f9fa; border-radius: 8px; font-size: 0.9rem; color: #495057; font-weight: 500; }
+          .start-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
+          .player { min-height: 100vh; background: #f8f9fa; display: flex; flex-direction: column; }
+          .player-header { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; }
+          .header-info h1 { font-size: 1.6rem; font-weight: 600; margin: 0; color: #2c3e50; }
+          .header-info p { color: #6c757d; margin: 4px 0 0 0; font-size: 0.95rem; }
+          .progress-bar { background: #e9ecef; height: 8px; position: relative; }
+          .progress-fill { background: linear-gradient(90deg, #28a745 0%, #20c997 100%); height: 100%; transition: width 0.3s ease; }
+          .progress-text { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 0.8rem; color: #495057; font-weight: 600; background: white; padding: 2px 8px; border-radius: 4px; }
+          .player-content { flex: 1; display: flex; overflow: hidden; }
+          .navigation { width: 280px; background: white; border-right: 1px solid #e9ecef; padding: 24px; overflow-y: auto; }
+          .nav-item { width: 100%; text-align: left; padding: 16px; border-radius: 8px; border: none; background: #f8f9fa; color: #495057; cursor: pointer; margin-bottom: 12px; transition: all 0.2s ease; display: flex; gap: 12px; align-items: center; }
+          .nav-item:hover { background: #e9ecef; transform: translateX(4px); }
+          .nav-item.active { background: #e3f2fd; color: #1976d2; border-left: 4px solid #1976d2; }
+          .nav-item.completed { background: #e8f5e8; }
+          .slide-container { flex: 1; padding: 40px; display: flex; justify-content: center; align-items: center; }
+          .slide { background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 800px; min-height: 500px; padding: 48px; display: flex; flex-direction: column; justify-content: center; }
+          .slide-header { text-align: center; margin-bottom: 32px; }
+          .slide-icon { font-size: 4rem; margin-bottom: 16px; }
+          .slide-header h2 { font-size: 2.2rem; font-weight: 600; color: #2c3e50; margin: 0; }
+          .slide-content { flex: 1; display: flex; align-items: center; justify-content: center; }
+          .regular-content { font-size: 1.4rem; line-height: 1.8; color: #495057; text-align: center; }
+          .interactive-content { font-size: 1.4rem; line-height: 1.8; color: #495057; text-align: center; }
+          .interactive-word { cursor: pointer; transition: all 0.2s ease; padding: 2px 4px; border-radius: 4px; }
+          .interactive-word:hover { background: rgba(33, 150, 243, 0.1); transform: scale(1.05); }
+          .interactive-word.clicked { background: rgba(76, 175, 80, 0.2); color: #2e7d32; font-weight: 600; }
+          .player-controls { background: white; border-top: 1px solid #e9ecef; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; }
+          .slide-indicator { display: flex; gap: 8px; align-items: center; }
+          .indicator-dot { width: 12px; height: 12px; border-radius: 50%; background: #dee2e6; cursor: pointer; transition: all 0.2s ease; }
+          .indicator-dot:hover { background: #adb5bd; transform: scale(1.2); }
+          .indicator-dot.active { background: #007bff; transform: scale(1.3); }
+          .indicator-dot.completed { background: #28a745; }
+          .btn-primary { background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
+          .btn-primary:hover { background: #0056b3; transform: translateY(-2px); }
+          .btn-primary.large { padding: 16px 32px; font-size: 1.1rem; }
+          .btn-secondary { background: #6c757d; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
+          .btn-control { background: #6c757d; color: white; border: none; border-radius: 6px; padding: 12px 20px; cursor: pointer; font-weight: 500; transition: all 0.2s ease; }
+          .btn-control:hover:not(:disabled) { background: #545b62; }
+          .btn-control:disabled { background: #dee2e6; color: #6c757d; cursor: not-allowed; }
+          .btn-control.primary { background: #28a745; }
+          .btn-control.primary:hover { background: #1e7e34; }
+          .btn-icon { background: #f8f9fa; color: #495057; border: 1px solid #dee2e6; border-radius: 6px; padding: 8px 12px; cursor: pointer; transition: all 0.2s ease; }
           @media (max-width: 768px) {
-            .start-content {
-              padding: 32px 24px;
-              margin: 16px;
-            }
-            
-            .start-content h1 {
-              font-size: 2rem;
-            }
-            
-            .course-features {
-              flex-direction: column;
-              align-items: center;
-            }
-            
-            .start-buttons {
-              flex-direction: column;
-            }
-            
-            .player-header {
-              padding: 16px 20px;
-              flex-direction: column;
-              text-align: center;
-              gap: 12px;
-            }
-            
-            .player-content {
-              flex-direction: column;
-            }
-            
-            .navigation {
-              width: 100%;
-              border-right: none;
-              border-bottom: 1px solid #e9ecef;
-              padding: 16px;
-            }
-            
-            .slide-container {
-              padding: 20px;
-            }
-            
-            .slide {
-              padding: 32px 24px;
-              min-height: 400px;
-            }
-            
-            .slide-header h2 {
-              font-size: 1.8rem;
-            }
-            
-            .regular-content,
-            .interactive-content {
-              font-size: 1.2rem;
-            }
-            
-            .player-controls {
-              padding: 16px 20px;
-              flex-direction: column;
-              gap: 16px;
-            }
-            
-            .slide-indicator {
-              order: -1;
-            }
+            .start-content { padding: 32px 24px; margin: 16px; }
+            .player-header { padding: 16px 20px; flex-direction: column; gap: 12px; }
+            .player-content { flex-direction: column; }
+            .navigation { width: 100%; border-right: none; border-bottom: 1px solid #e9ecef; }
+            .slide-container { padding: 20px; }
+            .slide { padding: 32px 24px; min-height: 400px; }
+            .player-controls { padding: 16px 20px; flex-direction: column; gap: 16px; }
           }
           EOF
-          fi
-          
-          echo "✅ WORKING ${{ matrix.app }} application generated with full functionality"
 
-      - name: "Test build locally"
-        run: |
-          set -euo pipefail
-          echo "🧪 Testing build for ${{ matrix.app }}..."
-          
-          cd "${{ matrix.app }}"
-          
-          # Test TypeScript compilation
-          echo "🔍 Testing TypeScript compilation..."
-          npx tsc --noEmit || echo "⚠️ TypeScript warnings found, but build should still work"
-          
-          # Build the application
-          echo "🏗️ Building application..."
-          npm run build
-          
-          # Verify build output
-          if [[ -f "build/index.html" ]]; then
-            echo "✅ Build successful - index.html created"
-            ls -la build/
-          else
-            echo "❌ Build failed - no index.html found"
-            exit 1
-          fi
-          
-          cd ..
-
-      - name: "Upload working build"
+      - name: "Upload complete player"
         uses: actions/upload-artifact@v4
         with:
-          name: working-build-${{ matrix.app }}
+          name: complete-player
+          path: player/
+          retention-days: 1
+
+  # Step 5: Build Applications
+  build-applications:
+    name: "Build Applications"
+    runs-on: ubuntu-latest
+    needs: [generate-editor-css, generate-player-code]
+    strategy:
+      matrix:
+        app: [editor, player]
+      fail-fast: false
+    steps:
+      - name: "Download complete application"
+        uses: actions/download-artifact@v4
+        with:
+          name: complete-${{ matrix.app }}
+
+      - name: "Build application"
+        run: |
+          cd ${{ matrix.app }}
+          npm run build
+
+      - name: "Upload build"
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.app }}
           path: ${{ matrix.app }}/build/
           retention-days: 7
 
-  # Deploy Working Demo
-  deploy-working-demo:
-    name: "Deploy Working Demo"
+  # Step 6: Deploy
+  deploy:
+    name: "Deploy to GitHub Pages"
     runs-on: ubuntu-latest
-    needs: create-working-apps
+    needs: build-applications
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
@@ -1847,95 +1399,33 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: "Download working editor build"
+      - name: "Download builds"
         uses: actions/download-artifact@v4
         with:
-          name: working-build-editor
+          name: build-editor
           path: dist/
-        continue-on-error: true
 
-      - name: "Download working player build" 
+      - name: "Download player build"
         uses: actions/download-artifact@v4
         with:
-          name: working-build-player
+          name: build-player
           path: dist/player/
-        continue-on-error: true
 
-      - name: "Create navigation index"
+      - name: "Create navigation"
         run: |
-          echo "🔗 Creating navigation index..."
-          cat > dist/index.html << 'EOF'
+          cat > dist/nav.html << 'EOF'
           <!DOCTYPE html>
-          <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>E-Learning Authoring Tool - Working Demo</title>
-            <style>
-              * { margin: 0; padding: 0; box-sizing: border-box; }
-              body { 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
-              }
-              .container { 
-                background: white; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.2);
-                padding: 48px; max-width: 800px; text-align: center;
-              }
-              h1 { font-size: 3rem; margin-bottom: 1rem; color: #2c3e50; }
-              p { font-size: 1.2rem; color: #6c757d; margin-bottom: 2rem; line-height: 1.6; }
-              .apps { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 2rem 0; }
-              .app-card { 
-                padding: 2rem; background: #f8f9fa; border-radius: 12px; transition: all 0.3s ease;
-                border: 2px solid transparent; text-decoration: none; color: inherit;
-              }
-              .app-card:hover { 
-                transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-                border-color: #007bff; text-decoration: none; color: inherit;
-              }
-              .app-icon { font-size: 3rem; margin-bottom: 1rem; }
-              .app-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #2c3e50; }
-              .app-desc { color: #6c757d; font-size: 0.9rem; }
-              .status { background: #d1ecf1; color: #0c5460; padding: 1rem; border-radius: 8px; margin: 2rem 0; }
-              @media (max-width: 768px) { 
-                .container { padding: 32px 24px; }
-                .apps { grid-template-columns: 1fr; }
-                h1 { font-size: 2.5rem; }
-              }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>🎓 E-Learning Authoring Tool</h1>
-              <p>Professional course authoring and playback applications, built with React and TypeScript</p>
-              
-              <div class="status">
-                <strong>✅ WORKING DEMO:</strong> Both applications are fully functional with interactive features!
-              </div>
-              
-              <div class="apps">
-                <a href="./index.html" class="app-card" onclick="window.location.reload(); return false;">
-                  <div class="app-icon">🎨</div>
-                  <div class="app-title">Course Editor</div>
-                  <div class="app-desc">Create interactive courses with drag-and-drop editing, canvas tools, and project management</div>
-                </a>
-                
-                <a href="./player/" class="app-card">
-                  <div class="app-icon">🎬</div>
-                  <div class="app-title">Course Player</div>
-                  <div class="app-desc">Interactive course player with navigation, progress tracking, and engaging features</div>
-                </a>
-              </div>
-              
-              <p style="margin-top: 2rem; font-size: 0.9rem; color: #6c757d;">
-                Both applications are fully responsive and work on desktop, tablet, and mobile devices.
-              </p>
+          <html>
+          <head><title>E-Learning Tools</title></head>
+          <body style="font-family: system-ui; padding: 2rem; text-align: center;">
+            <h1>🎓 E-Learning Authoring Tool</h1>
+            <div style="display: flex; gap: 2rem; justify-content: center; margin: 2rem 0;">
+              <a href="./" style="padding: 1rem 2rem; background: #007bff; color: white; text-decoration: none; border-radius: 8px;">🎨 Editor</a>
+              <a href="./player/" style="padding: 1rem 2rem; background: #28a745; color: white; text-decoration: none; border-radius: 8px;">🎬 Player</a>
             </div>
           </body>
           </html>
           EOF
-          
-          echo "✅ Navigation index created"
 
       - name: "Setup Pages"
         uses: actions/configure-pages@v4
@@ -1948,52 +1438,3 @@ jobs:
       - name: "Deploy to GitHub Pages"
         id: deployment
         uses: actions/deploy-pages@v4
-
-  # Summary
-  working-summary:
-    name: "Working Demo Summary"
-    runs-on: ubuntu-latest
-    needs: [create-working-apps, deploy-working-demo]
-    if: always()
-    steps:
-      - name: "Generate summary"
-        run: |
-          echo "🎓 E-Learning Tool - WORKING DEMO SUMMARY"
-          echo "========================================="
-          echo ""
-          echo "📋 Results:"
-          echo "- Create Apps: ${{ needs.create-working-apps.result }}"
-          echo "- Deploy Demo: ${{ needs.deploy-working-demo.result }}"
-          echo ""
-          echo "✅ GUARANTEED WORKING FEATURES:"
-          echo ""
-          echo "🎨 EDITOR APPLICATION:"
-          echo "- ✅ Project dashboard with create/delete functionality"
-          echo "- ✅ Visual canvas editor with element manipulation"
-          echo "- ✅ Tool selection (Select, Text, Image, Shape)"
-          echo "- ✅ Properties panel with real-time editing"
-          echo "- ✅ Slide management and navigation"
-          echo "- ✅ Responsive design for all screen sizes"
-          echo ""
-          echo "🎬 PLAYER APPLICATION:"
-          echo "- ✅ Interactive course navigation"
-          echo "- ✅ Progress tracking and completion status"
-          echo "- ✅ Fullscreen mode support"
-          echo "- ✅ Interactive elements (clickable words)"
-          echo "- ✅ Professional slide transitions"
-          echo "- ✅ Mobile-responsive design"
-          echo ""
-          echo "🚀 TECHNICAL FEATURES:"
-          echo "- ✅ Built with Create React App (guaranteed compatibility)"
-          echo "- ✅ TypeScript for type safety"
-          echo "- ✅ React Router for navigation"
-          echo "- ✅ CSS animations and transitions"
-          echo "- ✅ Error boundaries and fallbacks"
-          echo "- ✅ Professional styling and UX"
-          echo ""
-          if [[ "${{ needs.create-working-apps.result }}" == "success" ]]; then
-            echo "🎉 SUCCESS: Working e-learning applications deployed!"
-            echo "Both the editor and player are fully functional and ready to use."
-          else
-            echo "⚠️ Check individual job results for any issues."
-          fi
