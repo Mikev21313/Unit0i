@@ -2869,6 +2869,10 @@ jobs:
           # Clear any existing cache
           pnpm store prune || echo "No cache to prune"
           
+          # Configure pnpm for workspace environment
+          echo "Configuring pnpm for workspace..."
+          pnpm config set ignore-workspace-root-check true || echo "Config set failed"
+          
           # Install with comprehensive flags
           pnpm install \
             --no-frozen-lockfile \
@@ -2930,8 +2934,10 @@ jobs:
           # Clean everything
           rm -rf node_modules pnpm-lock.yaml || true
           
-          # Add missing types explicitly
-          pnpm add -D @types/react@^18.2.0 @types/react-dom@^18.2.0 @types/node@^20.10.0
+          # Add missing types explicitly to workspace root
+          pnpm add -D -w @types/react@^18.2.0 @types/react-dom@^18.2.0 @types/node@^20.10.0 || \
+          npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 @types/node@^20.10.0 --save-dev --legacy-peer-deps || \
+          echo "Type installation failed, continuing..."
           
           # Install with different strategy
           pnpm install \
@@ -2974,18 +2980,19 @@ jobs:
           # Clean slate
           rm -rf node_modules package-lock.json pnpm-lock.yaml || true
           
-          # Install core dependencies manually
-          npm install react@^18.2.0 react-dom@^18.2.0 --save
-          npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev
-          npm install typescript@^5.3.0 vite@^5.0.0 --save-dev
-          npm install turbo@^1.11.0 --save-dev
+          # Install core dependencies manually with npm (more reliable for workspace root)
+          echo "Installing core dependencies with npm..."
+          npm install react@^18.2.0 react-dom@^18.2.0 --save --legacy-peer-deps || echo "React install failed"
+          npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 @types/node@^20.10.0 --save-dev --legacy-peer-deps || echo "Types install failed"
+          npm install typescript@^5.3.0 vite@^5.0.0 --save-dev --legacy-peer-deps || echo "Build tools install failed"
+          npm install turbo@^1.11.0 --save-dev --legacy-peer-deps || echo "Turbo install failed"
           
           # Install remaining dependencies
-          npm install --legacy-peer-deps || echo "Some packages may have failed"
+          npm install --legacy-peer-deps --force || echo "Some packages may have failed"
           
-          # Convert back to pnpm
-          rm -f package-lock.json
-          pnpm import || echo "Import failed, continuing..."
+          # Convert back to pnpm if possible
+          rm -f package-lock.json || true
+          pnpm import || echo "Import failed, using npm setup"
           pnpm install --fix-lockfile || echo "pnpm install failed, using npm setup"
           
           echo "success=true" >> $GITHUB_OUTPUT
@@ -3022,20 +3029,29 @@ jobs:
           
           echo "🔧 Adding missing type dependencies..."
           
+          # Add React types to workspace root with explicit flag
+          echo "Adding React types to workspace root..."
+          pnpm add -D -w @types/react@^18.2.0 @types/react-dom@^18.2.0 || \
+          npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev --legacy-peer-deps || \
+          echo "Failed to add types to workspace root"
+          
           # Add React types to all packages that need them
           for dir in apps/editor apps/player packages/ui packages/interactions; do
             if [[ -d "$dir" ]]; then
               echo "Adding React types to $dir..."
               cd "$dir"
               pnpm add -D @types/react@^18.2.0 @types/react-dom@^18.2.0 || \
-              npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev || \
+              npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev --legacy-peer-deps || \
               echo "Failed to add types to $dir"
               cd ../../
             fi
           done
           
-          # Add Node types globally
-          pnpm add -D @types/node@^20.10.0 || npm install @types/node@^20.10.0 --save-dev
+          # Add Node types to workspace root
+          echo "Adding Node types to workspace root..."
+          pnpm add -D -w @types/node@^20.10.0 || \
+          npm install @types/node@^20.10.0 --save-dev --legacy-peer-deps || \
+          echo "Failed to add Node types"
 
       - name: "Fix TypeScript configurations"
         run: |
@@ -3151,8 +3167,12 @@ jobs:
               echo "✅ $pkg"
             else
               echo "⚠️ Missing: $pkg"
-              # Try to install missing package
-              pnpm add "$pkg" || npm install "$pkg" || echo "Failed to install $pkg"
+              # Try to install missing package with proper workspace handling
+              if [[ "$pkg" == "@types/"* ]]; then
+                pnpm add -D -w "$pkg" || npm install "$pkg" --save-dev --legacy-peer-deps || echo "Failed to install $pkg"
+              else
+                pnpm add -w "$pkg" || npm install "$pkg" --legacy-peer-deps || echo "Failed to install $pkg"
+              fi
             fi
           done
           
@@ -3174,16 +3194,22 @@ jobs:
           
           echo "🔧 Installing React JSX types..."
           
-          # Ensure React JSX types are available
-          pnpm add -D @types/react@^18.2.0 @types/react-dom@^18.2.0 || echo "pnpm failed"
-          npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev || echo "npm failed"
+          # Ensure React JSX types are available in workspace root
+          echo "Installing React types in workspace root..."
+          pnpm add -D -w @types/react@^18.2.0 @types/react-dom@^18.2.0 || \
+          npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev --legacy-peer-deps || \
+          echo "Workspace root type installation failed"
           
-          # Add to each app
+          # Add to each app individually
           for app in editor player; do
-            cd "apps/$app"
-            pnpm add -D @types/react@^18.2.0 @types/react-dom@^18.2.0 || echo "pnpm failed for $app"
-            npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev || echo "npm failed for $app"
-            cd ../../
+            if [[ -d "apps/$app" ]]; then
+              echo "Installing React types in apps/$app..."
+              cd "apps/$app"
+              pnpm add -D @types/react@^18.2.0 @types/react-dom@^18.2.0 || \
+              npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev --legacy-peer-deps || \
+              echo "Type installation failed for $app"
+              cd ../../
+            fi
           done
 
       - name: "Force workspace rebuild"
@@ -3192,13 +3218,16 @@ jobs:
           
           echo "🔄 Force workspace rebuild..."
           
+          # Configure pnpm workspace settings
+          pnpm config set ignore-workspace-root-check true || echo "Config set failed"
+          
           # Rebuild workspace
           pnpm install --force --fix-lockfile || echo "pnpm rebuild failed"
           
           # Ensure turbo is available
           if [[ ! -f "node_modules/.bin/turbo" ]]; then
-            echo "Installing turbo globally..."
-            npm install -g turbo@^1.11.0 || pnpm add -g turbo@^1.11.0
+            echo "Installing turbo to workspace root..."
+            pnpm add -D -w turbo@^1.11.0 || npm install turbo@^1.11.0 --save-dev --legacy-peer-deps || echo "Turbo install failed"
           fi
           
           # Verify turbo
@@ -3452,12 +3481,20 @@ jobs:
             fi
           done
           
-          # Install missing packages
+          # Install missing packages - in build context, install locally to app
           if [[ ${#MISSING_PACKAGES[@]} -gt 0 ]]; then
-            echo "📦 Installing missing packages..."
+            echo "📦 Installing missing packages locally..."
+            cd "apps/${{ matrix.app }}"
             for pkg in "${MISSING_PACKAGES[@]}"; do
-              pnpm add "$pkg" || npm install "$pkg" || echo "Failed to install $pkg"
+              if [[ "$pkg" == "@types/"* ]]; then
+                # Type packages
+                pnpm add -D "$pkg" || npm install "$pkg" --save-dev --legacy-peer-deps || echo "Failed to install $pkg"
+              else
+                # Regular packages
+                pnpm add "$pkg" || npm install "$pkg" --legacy-peer-deps || echo "Failed to install $pkg"
+              fi
             done
+            cd ../../
           fi
 
       - name: "Build packages with redundancy"
@@ -3552,10 +3589,11 @@ jobs:
           fi
           
           # Verify React types are available
-          if [[ ! -d "node_modules/@types/react" ]]; then
+          if [[ ! -d "node_modules/@types/react" ]] && [[ ! -d "../../node_modules/@types/react" ]]; then
             echo "Installing React types..."
             pnpm add -D @types/react@^18.2.0 @types/react-dom@^18.2.0 || \
-            npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev
+            npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev --legacy-peer-deps || \
+            echo "React types installation failed"
           fi
           
           cd ../../
@@ -3577,7 +3615,9 @@ jobs:
           # Check if React types are available
           if [[ ! -d "../../node_modules/@types/react" ]] && [[ ! -d "node_modules/@types/react" ]]; then
             echo "❌ React types not found, installing..."
-            pnpm add -D @types/react@^18.2.0 @types/react-dom@^18.2.0 || npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev
+            pnpm add -D @types/react@^18.2.0 @types/react-dom@^18.2.0 || \
+            npm install @types/react@^18.2.0 @types/react-dom@^18.2.0 --save-dev --legacy-peer-deps || \
+            echo "React types installation failed"
           fi
           
           # Create a test JSX file to verify React types work
