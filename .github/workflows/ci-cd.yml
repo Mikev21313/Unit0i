@@ -47,9 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: project-structure
-          path: |
-            editor/
-            player/
+          path: ./
           retention-days: 1
 
   # Step 2: Generate Editor App Code
@@ -61,7 +59,29 @@ jobs:
       - name: "Download project structure"
         uses: actions/download-artifact@v4
         with:
-          name: project-structure
+          name: project-structure  
+          path: ./
+
+      - name: "Verify structure"
+        run: |
+          echo "Directory contents after download:"
+          ls -la
+          if [ ! -d "player" ]; then
+            echo "❌ Player directory missing!"
+            exit 1
+          fi
+          echo "✅ Project structure verified"
+          path: ./
+
+      - name: "Verify structure"
+        run: |
+          echo "Directory contents after download:"
+          ls -la
+          if [ ! -d "editor" ]; then
+            echo "❌ Editor directory missing!"
+            exit 1
+          fi
+          echo "✅ Project structure verified"
 
       - name: "Generate editor App.tsx - Part 1"
         run: |
@@ -467,7 +487,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: editor-code
-          path: editor/
+          path: ./
           retention-days: 1
 
   # Step 3: Generate Editor CSS
@@ -480,10 +500,35 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: editor-code
+          path: ./
+
+      - name: "Verify directory structure"
+        run: |
+          echo "Current directory contents:"
+          ls -la
+          echo "Looking for editor directory:"
+          find . -name "editor" -type d || echo "No editor directory found"
+          echo "All directories:"
+          find . -type d
 
       - name: "Generate editor CSS - Part 1 (Base Styles)"
         run: |
+          # Ensure we're in the right directory
+          if [ ! -d "editor" ]; then
+            echo "❌ Editor directory not found!"
+            echo "Available directories:"
+            ls -la
+            exit 1
+          fi
+          
+          echo "✅ Editor directory found, generating CSS..."
           cd editor
+          
+          # Verify we have the src directory
+          if [ ! -d "src" ]; then
+            echo "❌ src directory not found in editor!"
+            exit 1
+          fi
           cat > src/App.css << 'EOF'
           .App {
             text-align: left;
@@ -980,7 +1025,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: complete-editor
-          path: editor/
+          path: ./
           retention-days: 1
 
   # Step 4: Generate Player App (Similar breakdown)
@@ -1355,7 +1400,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: complete-player
-          path: player/
+          path: ./
           retention-days: 1
 
   # Step 5: Build Applications
@@ -1372,10 +1417,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: complete-${{ matrix.app }}
+          path: ./
 
-      - name: "Build application"
+      - name: "Verify and build application"
         run: |
+          echo "Current directory contents:"
+          ls -la
+          echo "Looking for ${{ matrix.app }} directory:"
+          if [ ! -d "${{ matrix.app }}" ]; then
+            echo "❌ ${{ matrix.app }} directory not found!"
+            exit 1
+          fi
+          echo "✅ Found ${{ matrix.app }} directory"
           cd ${{ matrix.app }}
+          echo "Building application..."
           npm run build
 
       - name: "Upload build"
