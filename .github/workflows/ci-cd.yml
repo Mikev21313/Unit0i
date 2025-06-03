@@ -23,22 +23,228 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: "Verify Node.js installation"
+        run: |
+          echo "Node.js version: $(node --version)"
+          echo "npm version: $(npm --version)"
+          echo "npx version: $(npx --version)"
 
       - name: "Create editor app"
         run: |
           mkdir -p editor
           cd editor
-          npx create-react-app . --template typescript --use-npm
-          sleep 3
-          npm install react-router-dom
-          npm install @types/react-router-dom --save-dev
+          echo "Creating React app with Create React App..."
+          
+          # Try Create React App first
+          if npx create-react-app . --template typescript --use-npm; then
+            echo "✅ Create React App successful"
+          else
+            echo "⚠️ Create React App failed, creating manual setup..."
+            
+            # Create basic package.json
+            cat > package.json << 'EOF'
+          {
+            "name": "editor",
+            "version": "0.1.0",
+            "private": true,
+            "dependencies": {
+              "react": "^18.2.0",
+              "react-dom": "^18.2.0",
+              "react-scripts": "5.0.1",
+              "typescript": "^4.9.5",
+              "react-router-dom": "^6.20.0"
+            },
+            "devDependencies": {
+              "@types/react": "^18.2.0",
+              "@types/react-dom": "^18.2.0",
+              "@types/react-router-dom": "^6.20.0"
+            },
+            "scripts": {
+              "start": "react-scripts start",
+              "build": "react-scripts build",
+              "test": "react-scripts test",
+              "eject": "react-scripts eject"
+            },
+            "eslintConfig": {
+              "extends": [
+                "react-app",
+                "react-app/jest"
+              ]
+            },
+            "browserslist": {
+              "production": [
+                ">0.2%",
+                "not dead",
+                "not op_mini all"
+              ],
+              "development": [
+                "last 1 chrome version",
+                "last 1 firefox version",
+                "last 1 safari version"
+              ]
+            }
+          }
+          EOF
+            
+            # Create basic structure
+            mkdir -p src public
+            
+            # Create index.html
+            cat > public/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>E-Learning Editor</title>
+            </head>
+            <body>
+              <noscript>You need to enable JavaScript to run this app.</noscript>
+              <div id="root"></div>
+            </body>
+          </html>
+          EOF
+            
+            # Create basic index.tsx
+            cat > src/index.tsx << 'EOF'
+          import React from 'react';
+          import ReactDOM from 'react-dom/client';
+          import App from './App';
+
+          const root = ReactDOM.createRoot(
+            document.getElementById('root') as HTMLElement
+          );
+          root.render(
+            <React.StrictMode>
+              <App />
+            </React.StrictMode>
+          );
+          EOF
+            
+            # Install dependencies
+            npm install
+          fi
+          
+          echo "Waiting for installation to complete..."
+          sleep 5
+          
+          echo "Verifying react-scripts installation..."
+          if [ ! -f "node_modules/.bin/react-scripts" ]; then
+            echo "react-scripts not found, installing manually..."
+            npm install react-scripts --save
+          fi
+          
+          echo "Installing additional dependencies..."
+          npm install react-router-dom @types/react-router-dom --save
+          
+          echo "Editor app creation complete"
 
       - name: "Create player app"
         run: |
           mkdir -p player
           cd player
-          npx create-react-app . --template typescript --use-npm
-          sleep 3
+          echo "Creating React app with Create React App..."
+          
+          # Try Create React App first
+          if npx create-react-app . --template typescript --use-npm; then
+            echo "✅ Create React App successful"
+          else
+            echo "⚠️ Create React App failed, creating manual setup..."
+            
+            # Create basic package.json
+            cat > package.json << 'EOF'
+          {
+            "name": "player",
+            "version": "0.1.0",
+            "private": true,
+            "dependencies": {
+              "react": "^18.2.0",
+              "react-dom": "^18.2.0",
+              "react-scripts": "5.0.1",
+              "typescript": "^4.9.5"
+            },
+            "devDependencies": {
+              "@types/react": "^18.2.0",
+              "@types/react-dom": "^18.2.0"
+            },
+            "scripts": {
+              "start": "react-scripts start",
+              "build": "react-scripts build",
+              "test": "react-scripts test",
+              "eject": "react-scripts eject"
+            },
+            "eslintConfig": {
+              "extends": [
+                "react-app",
+                "react-app/jest"
+              ]
+            },
+            "browserslist": {
+              "production": [
+                ">0.2%",
+                "not dead",
+                "not op_mini all"
+              ],
+              "development": [
+                "last 1 chrome version",
+                "last 1 firefox version",
+                "last 1 safari version"
+              ]
+            }
+          }
+          EOF
+            
+            # Create basic structure
+            mkdir -p src public
+            
+            # Create index.html
+            cat > public/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>E-Learning Player</title>
+            </head>
+            <body>
+              <noscript>You need to enable JavaScript to run this app.</noscript>
+              <div id="root"></div>
+            </body>
+          </html>
+          EOF
+            
+            # Create basic index.tsx
+            cat > src/index.tsx << 'EOF'
+          import React from 'react';
+          import ReactDOM from 'react-dom/client';
+          import App from './App';
+
+          const root = ReactDOM.createRoot(
+            document.getElementById('root') as HTMLElement
+          );
+          root.render(
+            <React.StrictMode>
+              <App />
+            </React.StrictMode>
+          );
+          EOF
+            
+            # Install dependencies
+            npm install
+          fi
+          
+          echo "Waiting for installation to complete..."
+          sleep 5
+          
+          echo "Verifying react-scripts installation..."
+          if [ ! -f "node_modules/.bin/react-scripts" ]; then
+            echo "react-scripts not found, installing manually..."
+            npm install react-scripts --save
+          fi
+          
+          echo "Player app creation complete"
 
       - name: "Upload project structure"
         uses: actions/upload-artifact@v4
@@ -1290,6 +1496,18 @@ jobs:
         app: [editor, player]
       fail-fast: false
     steps:
+      - name: "Setup Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: "Verify Node.js installation"
+        run: |
+          echo "Node.js version: $(node --version)"
+          echo "npm version: $(npm --version)"
+          echo "npx version: $(npx --version)"
+
       - name: "Download complete application"
         uses: actions/download-artifact@v4
         with:
@@ -1298,9 +1516,40 @@ jobs:
 
       - name: "Build application"
         run: |
+          echo "Current directory contents:"
           ls -la
+          echo "Changing to ${{ matrix.app }} directory..."
           cd ${{ matrix.app }}
+          
+          echo "Verifying package.json exists..."
+          if [ ! -f "package.json" ]; then
+            echo "❌ package.json not found!"
+            exit 1
+          fi
+          
+          echo "Checking for react-scripts..."
+          if [ ! -f "node_modules/.bin/react-scripts" ]; then
+            echo "⚠️ react-scripts not found, installing dependencies..."
+            npm install
+            
+            # If still not found, install react-scripts specifically
+            if [ ! -f "node_modules/.bin/react-scripts" ]; then
+              echo "Installing react-scripts manually..."
+              npm install react-scripts --save
+            fi
+          fi
+          
+          echo "✅ react-scripts found, starting build..."
           npm run build
+          
+          echo "Build completed, checking output..."
+          if [ -d "build" ]; then
+            echo "✅ Build directory created successfully"
+            ls -la build/
+          else
+            echo "❌ Build directory not found!"
+            exit 1
+          fi
 
       - name: "Upload build"
         uses: actions/upload-artifact@v4
