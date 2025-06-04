@@ -1,4 +1,4 @@
-name: "E-Learning Tool - Optimized Build & Deploy"
+name: "E-Learning Tool - Production Ready"
 
 on:
   push:
@@ -20,60 +20,188 @@ env:
   NODE_VERSION: "20"
 
 jobs:
-  build:
-    name: "Build React Applications"
+  # Job 1: Setup repository structure and dependencies
+  setup:
+    name: "Setup Repository Structure"
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [editor, player]
-        include:
-          - app: editor
-            port: 3000
-          - app: player
-            port: 3001
-    
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v4
 
-      - name: "Setup Node.js with caching"
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: '${{ matrix.app }}/package-lock.json'
-
-      - name: "Create React application"
+      - name: "Create project structure"
         run: |
-          # Create the app directory
-          mkdir -p ${{ matrix.app }}
-          cd ${{ matrix.app }}
-          
-          # Initialize React app with TypeScript
-          npx create-react-app@latest . --template typescript --use-npm
-          
-          # Install additional dependencies
-          npm install react-router-dom @types/react-router-dom
+          # Create editor application structure
+          mkdir -p editor/src editor/public
+          mkdir -p player/src player/public
 
-      - name: "Generate application code"
+      - name: "Setup Editor package.json"
         run: |
-          cd ${{ matrix.app }}
-          
-          # Generate App.tsx based on matrix app type
-          if [ "${{ matrix.app }}" = "editor" ]; then
-            cat > src/App.tsx << 'EOF'
+          cat > editor/package.json << 'EOF'
+          {
+            "name": "e-learning-editor",
+            "version": "0.1.0",
+            "private": true,
+            "homepage": "/Unit0i/editor",
+            "dependencies": {
+              "react": "^18.2.0",
+              "react-dom": "^18.2.0",
+              "react-router-dom": "^6.20.0",
+              "react-scripts": "5.0.1",
+              "typescript": "^4.9.5",
+              "@types/react": "^18.2.0",
+              "@types/react-dom": "^18.2.0",
+              "@types/react-router-dom": "^6.20.0"
+            },
+            "scripts": {
+              "start": "react-scripts start",
+              "build": "react-scripts build",
+              "test": "react-scripts test --watchAll=false",
+              "eject": "react-scripts eject"
+            },
+            "eslintConfig": {
+              "extends": [
+                "react-app",
+                "react-app/jest"
+              ]
+            },
+            "browserslist": {
+              "production": [
+                ">0.2%",
+                "not dead",
+                "not op_mini all"
+              ],
+              "development": [
+                "last 1 chrome version",
+                "last 1 firefox version",
+                "last 1 safari version"
+              ]
+            }
+          }
+          EOF
+
+      - name: "Setup Player package.json"
+        run: |
+          cat > player/package.json << 'EOF'
+          {
+            "name": "e-learning-player",
+            "version": "0.1.0",
+            "private": true,
+            "homepage": "/Unit0i/player",
+            "dependencies": {
+              "react": "^18.2.0",
+              "react-dom": "^18.2.0",
+              "react-scripts": "5.0.1",
+              "typescript": "^4.9.5",
+              "@types/react": "^18.2.0",
+              "@types/react-dom": "^18.2.0"
+            },
+            "scripts": {
+              "start": "react-scripts start",
+              "build": "react-scripts build",
+              "test": "react-scripts test --watchAll=false",
+              "eject": "react-scripts eject"
+            },
+            "eslintConfig": {
+              "extends": [
+                "react-app",
+                "react-app/jest"
+              ]
+            },
+            "browserslist": {
+              "production": [
+                ">0.2%",
+                "not dead",
+                "not op_mini all"
+              ],
+              "development": [
+                "last 1 chrome version",
+                "last 1 firefox version",
+                "last 1 safari version"
+              ]
+            }
+          }
+          EOF
+
+      - name: "Create Editor HTML template"
+        run: |
+          cat > editor/public/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <meta name="theme-color" content="#000000" />
+              <meta name="description" content="E-Learning Course Editor - Create interactive learning experiences" />
+              <title>E-Learning Editor</title>
+            </head>
+            <body>
+              <noscript>You need to enable JavaScript to run this app.</noscript>
+              <div id="root"></div>
+            </body>
+          </html>
+          EOF
+
+      - name: "Create Player HTML template"
+        run: |
+          cat > player/public/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="utf-8" />
+              <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <meta name="theme-color" content="#000000" />
+              <meta name="description" content="E-Learning Course Player - Experience interactive courses" />
+              <title>E-Learning Player</title>
+            </head>
+            <body>
+              <noscript>You need to enable JavaScript to run this app.</noscript>
+              <div id="root"></div>
+            </body>
+          </html>
+          EOF
+
+      - name: "Generate Editor Application Code"
+        run: |
+          cat > editor/src/App.tsx << 'EOF'
           import React, { useState, useRef } from 'react';
           import { BrowserRouter as Router, Routes, Route, useNavigate, useParams } from 'react-router-dom';
           import './App.css';
 
+          interface Element {
+            id: string;
+            type: string;
+            content: string;
+            x: number;
+            y: number;
+            selected: boolean;
+            width?: number;
+            height?: number;
+            fontSize?: number;
+            color?: string;
+            backgroundColor?: string;
+          }
+
+          interface Project {
+            id: string;
+            title: string;
+            description: string;
+            lastEdited: string;
+            slides: number;
+            elements: Element[];
+          }
+
           const SimpleCanvas: React.FC<{ 
-            elements: any[], 
+            elements: Element[], 
             onElementClick: (id: string) => void,
             onCanvasClick: (x: number, y: number) => void,
-            selectedTool: string 
-          }> = ({ elements, onElementClick, onCanvasClick, selectedTool }) => {
+            selectedTool: string,
+            onElementUpdate: (id: string, updates: Partial<Element>) => void
+          }> = ({ elements, onElementClick, onCanvasClick, selectedTool, onElementUpdate }) => {
             const canvasRef = useRef<HTMLDivElement>(null);
+            const [draggedElement, setDraggedElement] = useState<string | null>(null);
+            const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
             const handleCanvasClick = (e: React.MouseEvent) => {
               if (selectedTool === 'text' && canvasRef.current) {
@@ -84,20 +212,51 @@ jobs:
               }
             };
 
+            const handleMouseDown = (e: React.MouseEvent, elementId: string) => {
+              e.stopPropagation();
+              const element = elements.find(el => el.id === elementId);
+              if (element && selectedTool === 'select') {
+                setDraggedElement(elementId);
+                setDragOffset({
+                  x: e.clientX - element.x,
+                  y: e.clientY - element.y
+                });
+                onElementClick(elementId);
+              }
+            };
+
+            const handleMouseMove = (e: React.MouseEvent) => {
+              if (draggedElement && canvasRef.current) {
+                const rect = canvasRef.current.getBoundingClientRect();
+                const newX = Math.max(0, Math.min(rect.width - 100, e.clientX - rect.left - dragOffset.x + rect.left));
+                const newY = Math.max(0, Math.min(rect.height - 40, e.clientY - rect.top - dragOffset.y + rect.top));
+                
+                onElementUpdate(draggedElement, { x: newX, y: newY });
+              }
+            };
+
+            const handleMouseUp = () => {
+              setDraggedElement(null);
+            };
+
             return (
               <div 
                 ref={canvasRef}
                 className="canvas-area"
                 onClick={handleCanvasClick}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
                 style={{
-                  width: '800px',
-                  height: '600px',
-                  backgroundColor: '#f8f9fa',
-                  border: '2px solid #dee2e6',
-                  borderRadius: '8px',
+                  width: '900px',
+                  height: '650px',
+                  backgroundColor: '#ffffff',
+                  border: '2px solid #e1e5e9',
+                  borderRadius: '12px',
                   position: 'relative',
                   margin: '20px auto',
-                  cursor: selectedTool === 'text' ? 'crosshair' : 'default'
+                  cursor: selectedTool === 'text' ? 'crosshair' : 'default',
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
                 }}
               >
                 {elements.map((element) => (
@@ -108,21 +267,26 @@ jobs:
                       position: 'absolute',
                       left: `${element.x}px`,
                       top: `${element.y}px`,
-                      padding: '8px',
-                      backgroundColor: element.selected ? '#e3f2fd' : '#ffffff',
-                      border: element.selected ? '2px solid #2196f3' : '1px solid #ccc',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
+                      padding: '12px 16px',
+                      backgroundColor: element.selected ? '#e3f2fd' : element.backgroundColor || '#ffffff',
+                      border: element.selected ? '3px solid #2196f3' : '2px solid #ddd',
+                      borderRadius: '8px',
+                      cursor: selectedTool === 'select' ? 'move' : 'pointer',
                       userSelect: 'none',
-                      minWidth: '100px',
-                      minHeight: '30px'
+                      minWidth: `${element.width || 120}px`,
+                      minHeight: `${element.height || 40}px`,
+                      fontSize: `${element.fontSize || 14}px`,
+                      color: element.color || '#333',
+                      fontWeight: '500',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: element.selected ? '0 4px 12px rgba(33, 150, 243, 0.3)' : '0 2px 8px rgba(0,0,0,0.1)'
                     }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onElementClick(element.id);
-                    }}
+                    onMouseDown={(e) => handleMouseDown(e, element.id)}
                   >
-                    {element.content || 'Text Element'}
+                    {element.content || 'New Text Element'}
                   </div>
                 ))}
                 
@@ -133,38 +297,37 @@ jobs:
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
                     textAlign: 'center',
-                    color: '#6c757d',
-                    fontSize: '18px'
+                    color: '#9e9e9e',
+                    fontSize: '18px',
+                    fontWeight: '500'
                   }}>
-                    <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎨</div>
-                    <div>Select "Text" tool and click to add content</div>
+                    <div style={{ fontSize: '64px', marginBottom: '20px' }}>🎨</div>
+                    <div>Select the "Text" tool and click anywhere to add content</div>
+                    <div style={{ fontSize: '14px', marginTop: '8px', color: '#bbb' }}>
+                      Use the tools above to create interactive learning elements
+                    </div>
                   </div>
                 )}
               </div>
             );
           };
 
-          const ProjectDashboard: React.FC = () => {
+          const ProjectDashboard: React.FC<{
+            projects: Project[],
+            onCreateProject: () => void,
+            onDeleteProject: (id: string) => void
+          }> = ({ projects, onCreateProject, onDeleteProject }) => {
             const navigate = useNavigate();
-            const [projects] = useState([
-              {
-                id: '1',
-                title: 'Sample E-Learning Course',
-                description: 'Introduction to interactive learning',
-                lastEdited: new Date().toLocaleDateString(),
-                slides: 3
-              }
-            ]);
 
             return (
               <div className="dashboard">
                 <div className="dashboard-header">
                   <div>
                     <h1>🎓 E-Learning Studio</h1>
-                    <p>Create engaging interactive courses</p>
+                    <p>Create engaging interactive courses with professional authoring tools</p>
                   </div>
-                  <button onClick={() => navigate('/editor/1')} className="btn-primary">
-                    ➕ Start Editing
+                  <button onClick={onCreateProject} className="btn-primary">
+                    ➕ New Project
                   </button>
                 </div>
                 
@@ -175,86 +338,379 @@ jobs:
                       className="project-card"
                       onClick={() => navigate(`/editor/${project.id}`)}
                     >
-                      <div className="project-preview">📚</div>
+                      <div className="project-preview">
+                        <div className="preview-icon">📚</div>
+                        <small>{project.slides} slides • {project.elements.length} elements</small>
+                      </div>
                       <h3>{project.title}</h3>
                       <p>{project.description}</p>
+                      <div className="project-footer">
+                        <span className="last-edited">Last edited: {project.lastEdited}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteProject(project.id);
+                          }}
+                          className="btn-delete"
+                          title="Delete project"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
                   ))}
+                  
+                  <div className="project-card add-card" onClick={onCreateProject}>
+                    <div className="add-content">
+                      <div className="add-icon">➕</div>
+                      <h3>Create New Project</h3>
+                      <p>Start building your next course</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
           };
 
-          const CourseEditor: React.FC = () => {
+          const CourseEditor: React.FC<{
+            projects: Project[],
+            onUpdateProject: (projectId: string, updates: Partial<Project>) => void
+          }> = ({ projects, onUpdateProject }) => {
             const { projectId } = useParams();
             const navigate = useNavigate();
             const [selectedTool, setSelectedTool] = useState('select');
-            const [elements, setElements] = useState<any[]>([]);
-            const [elementCounter, setElementCounter] = useState(1);
+            const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+
+            const project = projects.find(p => p.id === projectId);
+            
+            if (!project) {
+              return (
+                <div className="editor-error">
+                  <h2>Project not found</h2>
+                  <button onClick={() => navigate('/')} className="btn-primary">
+                    ← Back to Dashboard
+                  </button>
+                </div>
+              );
+            }
+
+            const elements = project.elements || [];
+
+            const tools = [
+              { id: 'select', name: '👆 Select', description: 'Select and move elements' },
+              { id: 'text', name: '📝 Text', description: 'Add text elements' },
+              { id: 'image', name: '🖼️ Image', description: 'Add images' },
+              { id: 'shape', name: '🔷 Shape', description: 'Add shapes' },
+              { id: 'video', name: '🎥 Video', description: 'Add video content' }
+            ];
 
             const addTextElement = (x: number, y: number) => {
-              const newElement = {
-                id: `element-${elementCounter}`,
+              const newElement: Element = {
+                id: `element-${Date.now()}`,
                 type: 'text',
-                content: `Text ${elementCounter}`,
-                x: Math.max(10, x - 50),
-                y: Math.max(10, y - 15),
-                selected: false
+                content: `Text Element ${elements.length + 1}`,
+                x: Math.max(10, x - 60),
+                y: Math.max(10, y - 20),
+                selected: false,
+                width: 120,
+                height: 40,
+                fontSize: 14,
+                color: '#333333',
+                backgroundColor: '#ffffff'
               };
-              setElements([...elements, newElement]);
-              setElementCounter(elementCounter + 1);
+              
+              onUpdateProject(projectId!, {
+                elements: [...elements, newElement],
+                lastEdited: new Date().toLocaleDateString()
+              });
             };
 
             const selectElement = (id: string) => {
-              setElements(elements.map(el => ({
+              const updatedElements = elements.map(el => ({
                 ...el,
                 selected: el.id === id
-              })));
+              }));
+              
+              onUpdateProject(projectId!, { elements: updatedElements });
+              setSelectedElementId(id);
             };
+
+            const updateElement = (id: string, updates: Partial<Element>) => {
+              const updatedElements = elements.map(el => 
+                el.id === id ? { ...el, ...updates } : el
+              );
+              
+              onUpdateProject(projectId!, { 
+                elements: updatedElements,
+                lastEdited: new Date().toLocaleDateString()
+              });
+            };
+
+            const deleteSelectedElement = () => {
+              if (selectedElementId) {
+                const updatedElements = elements.filter(el => el.id !== selectedElementId);
+                onUpdateProject(projectId!, { 
+                  elements: updatedElements,
+                  lastEdited: new Date().toLocaleDateString()
+                });
+                setSelectedElementId(null);
+              }
+            };
+
+            const clearSelection = () => {
+              const updatedElements = elements.map(el => ({ ...el, selected: false }));
+              onUpdateProject(projectId!, { elements: updatedElements });
+              setSelectedElementId(null);
+            };
+
+            const selectedElement = elements.find(el => el.id === selectedElementId);
 
             return (
               <div className="editor">
                 <div className="editor-toolbar">
-                  <button onClick={() => navigate('/')} className="btn-back">
-                    ← Dashboard
-                  </button>
-                  <h1>Course Editor - Project {projectId}</h1>
+                  <div className="toolbar-left">
+                    <button onClick={() => navigate('/')} className="btn-back">
+                      ← Dashboard
+                    </button>
+                    <h1>{project.title}</h1>
+                  </div>
                   
                   <div className="toolbar-center">
-                    <button
-                      onClick={() => setSelectedTool('select')}
-                      className={`tool-btn ${selectedTool === 'select' ? 'active' : ''}`}
-                    >
-                      👆 Select
+                    {tools.map((tool) => (
+                      <button
+                        key={tool.id}
+                        onClick={() => setSelectedTool(tool.id)}
+                        className={`tool-btn ${selectedTool === tool.id ? 'active' : ''}`}
+                        title={tool.description}
+                      >
+                        {tool.name}
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="toolbar-right">
+                    <button onClick={clearSelection} className="btn-secondary">
+                      Clear Selection
                     </button>
-                    <button
-                      onClick={() => setSelectedTool('text')}
-                      className={`tool-btn ${selectedTool === 'text' ? 'active' : ''}`}
+                    {selectedElementId && (
+                      <button onClick={deleteSelectedElement} className="btn-delete">
+                        🗑️ Delete
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => window.open(`/Unit0i/player/?project=${projectId}`, '_blank')}
+                      className="btn-preview"
                     >
-                      📝 Text
+                      👁️ Preview
                     </button>
                   </div>
                 </div>
 
                 <div className="editor-content">
-                  <SimpleCanvas 
-                    elements={elements}
-                    onElementClick={selectElement}
-                    onCanvasClick={addTextElement}
-                    selectedTool={selectedTool}
-                  />
+                  <div className="sidebar">
+                    <h3>Slides</h3>
+                    <div className="slide-item active">
+                      <div className="slide-number">1</div>
+                      <div className="slide-info">
+                        <div className="slide-title">Main Slide</div>
+                        <div className="slide-elements">{elements.length} elements</div>
+                      </div>
+                    </div>
+                    
+                    <h3 style={{ marginTop: '32px' }}>Properties</h3>
+                    {selectedElement ? (
+                      <div className="properties">
+                        <div className="property-group">
+                          <label>Content:</label>
+                          <textarea 
+                            value={selectedElement.content}
+                            onChange={(e) => updateElement(selectedElementId!, { content: e.target.value })}
+                            rows={3}
+                          />
+                        </div>
+                        <div className="property-group">
+                          <label>Position:</label>
+                          <div className="position-inputs">
+                            <input 
+                              type="number" 
+                              value={selectedElement.x}
+                              onChange={(e) => updateElement(selectedElementId!, { x: parseInt(e.target.value) || 0 })}
+                              placeholder="X"
+                            />
+                            <input 
+                              type="number" 
+                              value={selectedElement.y}
+                              onChange={(e) => updateElement(selectedElementId!, { y: parseInt(e.target.value) || 0 })}
+                              placeholder="Y"
+                            />
+                          </div>
+                        </div>
+                        <div className="property-group">
+                          <label>Size:</label>
+                          <div className="position-inputs">
+                            <input 
+                              type="number" 
+                              value={selectedElement.width || 120}
+                              onChange={(e) => updateElement(selectedElementId!, { width: parseInt(e.target.value) || 120 })}
+                              placeholder="Width"
+                            />
+                            <input 
+                              type="number" 
+                              value={selectedElement.height || 40}
+                              onChange={(e) => updateElement(selectedElementId!, { height: parseInt(e.target.value) || 40 })}
+                              placeholder="Height"
+                            />
+                          </div>
+                        </div>
+                        <div className="property-group">
+                          <label>Font Size:</label>
+                          <input 
+                            type="number" 
+                            value={selectedElement.fontSize || 14}
+                            onChange={(e) => updateElement(selectedElementId!, { fontSize: parseInt(e.target.value) || 14 })}
+                            min="8"
+                            max="72"
+                          />
+                        </div>
+                        <div className="property-group">
+                          <label>Text Color:</label>
+                          <input 
+                            type="color" 
+                            value={selectedElement.color || '#333333'}
+                            onChange={(e) => updateElement(selectedElementId!, { color: e.target.value })}
+                          />
+                        </div>
+                        <div className="property-group">
+                          <label>Background:</label>
+                          <input 
+                            type="color" 
+                            value={selectedElement.backgroundColor || '#ffffff'}
+                            onChange={(e) => updateElement(selectedElementId!, { backgroundColor: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="no-selection">
+                        <div className="no-selection-icon">👆</div>
+                        <p>Select an element to edit its properties</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="canvas-container">
+                    <div className="canvas-header">
+                      <h3>Canvas</h3>
+                      <div className="canvas-info">
+                        Selected Tool: <strong>{tools.find(t => t.id === selectedTool)?.name}</strong>
+                      </div>
+                    </div>
+                    
+                    <SimpleCanvas 
+                      elements={elements}
+                      onElementClick={selectElement}
+                      onCanvasClick={addTextElement}
+                      onElementUpdate={updateElement}
+                      selectedTool={selectedTool}
+                    />
+                    
+                    <div className="canvas-footer">
+                      <div className="element-count">Elements: {elements.length}</div>
+                      <div className="instructions">
+                        {selectedTool === 'text' ? 'Click on canvas to add text elements' : 
+                         selectedTool === 'select' ? 'Click and drag elements to move them' : 
+                         'Select a tool to begin editing'}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
           };
 
           const App: React.FC = () => {
+            const [projects, setProjects] = useState<Project[]>([
+              {
+                id: '1',
+                title: 'Sample E-Learning Course',
+                description: 'Introduction to interactive learning with multimedia elements',
+                lastEdited: new Date().toLocaleDateString(),
+                slides: 1,
+                elements: [
+                  {
+                    id: 'sample-1',
+                    type: 'text',
+                    content: 'Welcome to E-Learning!',
+                    x: 300,
+                    y: 150,
+                    selected: false,
+                    width: 300,
+                    height: 60,
+                    fontSize: 24,
+                    color: '#2c3e50',
+                    backgroundColor: '#ecf0f1'
+                  },
+                  {
+                    id: 'sample-2',
+                    type: 'text',
+                    content: 'Click and drag me around!',
+                    x: 350,
+                    y: 300,
+                    selected: false,
+                    width: 200,
+                    height: 50,
+                    fontSize: 16,
+                    color: '#e74c3c',
+                    backgroundColor: '#fff3cd'
+                  }
+                ]
+              }
+            ]);
+
+            const createProject = () => {
+              const newProject: Project = {
+                id: Date.now().toString(),
+                title: `New Project ${projects.length + 1}`,
+                description: 'A new e-learning project ready for content',
+                lastEdited: new Date().toLocaleDateString(),
+                slides: 1,
+                elements: []
+              };
+              setProjects([newProject, ...projects]);
+            };
+
+            const deleteProject = (id: string) => {
+              setProjects(projects.filter(p => p.id !== id));
+            };
+
+            const updateProject = (projectId: string, updates: Partial<Project>) => {
+              setProjects(projects.map(p => 
+                p.id === projectId ? { ...p, ...updates } : p
+              ));
+            };
+
             return (
               <Router>
                 <div className="App">
                   <Routes>
-                    <Route path="/" element={<ProjectDashboard />} />
-                    <Route path="/editor/:projectId" element={<CourseEditor />} />
+                    <Route 
+                      path="/" 
+                      element={
+                        <ProjectDashboard 
+                          projects={projects}
+                          onCreateProject={createProject}
+                          onDeleteProject={deleteProject}
+                        />
+                      } 
+                    />
+                    <Route 
+                      path="/editor/:projectId" 
+                      element={
+                        <CourseEditor 
+                          projects={projects}
+                          onUpdateProject={updateProject}
+                        />
+                      } 
+                    />
                   </Routes>
                 </div>
               </Router>
@@ -263,25 +719,182 @@ jobs:
 
           export default App;
           EOF
-          else
-            cat > src/App.tsx << 'EOF'
-          import React, { useState } from 'react';
+
+      - name: "Generate Player Application Code"
+        run: |
+          cat > player/src/App.tsx << 'EOF'
+          import React, { useState, useEffect } from 'react';
           import './App.css';
 
-          const courseData = {
-            title: "Interactive E-Learning Course",
-            description: "A comprehensive learning experience",
+          interface Slide {
+            id: string;
+            title: string;
+            content: string;
+            icon: string;
+            interactiveElements?: any[];
+          }
+
+          interface CourseData {
+            title: string;
+            description: string;
+            slides: Slide[];
+            totalDuration?: string;
+            difficulty?: string;
+          }
+
+          const courseData: CourseData = {
+            title: "Interactive E-Learning Experience",
+            description: "A comprehensive learning journey with engaging multimedia content",
+            totalDuration: "45 minutes",
+            difficulty: "Beginner",
             slides: [
-              { id: "1", title: "Welcome", content: "🎓 Welcome to this interactive course!", icon: "🎓" },
-              { id: "2", title: "Learning Objectives", content: "📚 Master key concepts through engaging content.", icon: "📚" },
-              { id: "3", title: "Interactive Features", content: "🎯 Includes quizzes and hands-on exercises.", icon: "🎯" },
-              { id: "4", title: "Conclusion", content: "🎉 Congratulations on completing the course!", icon: "🎉" }
+              { 
+                id: "1", 
+                title: "Welcome to Learning", 
+                content: "🎓 Welcome to this interactive course! This comprehensive learning experience will guide you through essential concepts using engaging multimedia content, interactive exercises, and real-world examples.",
+                icon: "🎓"
+              },
+              { 
+                id: "2", 
+                title: "Learning Objectives", 
+                content: "📚 By the end of this course, you'll have mastered key concepts, developed practical skills, and gained confidence to apply your knowledge in real-world scenarios. Our structured approach ensures effective learning.",
+                icon: "📚"
+              },
+              { 
+                id: "3", 
+                title: "Interactive Features", 
+                content: "🎯 This course includes interactive elements, knowledge checks, hands-on exercises, multimedia presentations, and collaborative activities designed to enhance your learning experience and retention.",
+                icon: "🎯"
+              },
+              { 
+                id: "4", 
+                title: "Knowledge Check", 
+                content: "🧠 Let's test what you've learned! Click on the highlighted words below to reveal additional information and test your understanding of the concepts we've covered.",
+                icon: "🧠",
+                interactiveElements: ["concepts", "understanding", "knowledge", "learning"]
+              },
+              { 
+                id: "5", 
+                title: "Practice Exercise", 
+                content: "✍️ Time for hands-on practice! Complete the interactive exercise below to reinforce your learning and apply the concepts in a practical scenario.",
+                icon: "✍️"
+              },
+              { 
+                id: "6", 
+                title: "Real-World Application", 
+                content: "🌍 Discover how these concepts apply in real-world situations. Explore case studies and examples that demonstrate practical applications of what you've learned.",
+                icon: "🌍"
+              },
+              { 
+                id: "7", 
+                title: "Assessment", 
+                content: "📊 Complete this quick assessment to evaluate your progress and identify areas for further development. Your performance will help guide next steps.",
+                icon: "📊"
+              },
+              { 
+                id: "8", 
+                title: "Course Completion", 
+                content: "🎉 Congratulations! You've successfully completed the course. You're now equipped with valuable knowledge and skills to tackle new challenges and opportunities.",
+                icon: "🎉"
+              }
             ]
           };
 
           const App: React.FC = () => {
             const [courseStarted, setCourseStarted] = useState(false);
             const [currentSlide, setCurrentSlide] = useState(0);
+            const [isFullscreen, setIsFullscreen] = useState(false);
+            const [clickedWords, setClickedWords] = useState<Set<number>>(new Set());
+            const [completedSlides, setCompletedSlides] = useState<Set<number>>(new Set());
+            const [userProgress, setUserProgress] = useState({
+              timeSpent: 0,
+              interactionsCount: 0,
+              score: 0
+            });
+
+            const progress = ((currentSlide + 1) / courseData.slides.length) * 100;
+
+            useEffect(() => {
+              let interval: NodeJS.Timeout;
+              if (courseStarted) {
+                interval = setInterval(() => {
+                  setUserProgress(prev => ({ ...prev, timeSpent: prev.timeSpent + 1 }));
+                }, 1000);
+              }
+              return () => clearInterval(interval);
+            }, [courseStarted]);
+
+            const toggleFullscreen = () => {
+              if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().then(() => {
+                  setIsFullscreen(true);
+                }).catch(() => {
+                  setIsFullscreen(false);
+                });
+              } else {
+                document.exitFullscreen().then(() => {
+                  setIsFullscreen(false);
+                }).catch(() => {
+                  setIsFullscreen(true);
+                });
+              }
+            };
+
+            useEffect(() => {
+              const handleFullscreenChange = () => {
+                setIsFullscreen(!!document.fullscreenElement);
+              };
+
+              document.addEventListener('fullscreenchange', handleFullscreenChange);
+              return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            }, []);
+
+            const startCourse = () => {
+              setCourseStarted(true);
+              setCompletedSlides(new Set([0]));
+            };
+
+            const resetCourse = () => { 
+              setCourseStarted(false); 
+              setCurrentSlide(0); 
+              setClickedWords(new Set());
+              setCompletedSlides(new Set());
+              setUserProgress({ timeSpent: 0, interactionsCount: 0, score: 0 });
+            };
+
+            const nextSlide = () => { 
+              if (currentSlide < courseData.slides.length - 1) {
+                const newSlide = currentSlide + 1;
+                setCurrentSlide(newSlide);
+                setCompletedSlides(prev => new Set([...prev, newSlide]));
+              }
+            };
+
+            const prevSlide = () => { 
+              if (currentSlide > 0) {
+                setCurrentSlide(currentSlide - 1);
+              }
+            };
+
+            const goToSlide = (index: number) => {
+              setCurrentSlide(index);
+              setCompletedSlides(prev => new Set([...prev, index]));
+            };
+
+            const handleWordClick = (index: number) => {
+              setClickedWords(new Set([...clickedWords, index]));
+              setUserProgress(prev => ({ 
+                ...prev, 
+                interactionsCount: prev.interactionsCount + 1,
+                score: prev.score + 10
+              }));
+            };
+
+            const formatTime = (seconds: number) => {
+              const mins = Math.floor(seconds / 60);
+              const secs = seconds % 60;
+              return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
 
             if (!courseStarted) {
               return (
@@ -290,59 +903,197 @@ jobs:
                     <div className="start-icon">🎓</div>
                     <h1>{courseData.title}</h1>
                     <p>{courseData.description}</p>
-                    <button onClick={() => setCourseStarted(true)} className="btn-primary">
-                      ▶️ Start Course
-                    </button>
+                    
+                    <div className="course-meta">
+                      <div className="meta-item">
+                        <span className="meta-icon">⏱️</span>
+                        <span>Duration: {courseData.totalDuration}</span>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-icon">📈</span>
+                        <span>Level: {courseData.difficulty}</span>
+                      </div>
+                      <div className="meta-item">
+                        <span className="meta-icon">📑</span>
+                        <span>{courseData.slides.length} Lessons</span>
+                      </div>
+                    </div>
+                    
+                    <div className="course-features">
+                      <div className="feature">
+                        <span className="feature-icon">📱</span>
+                        <span>Responsive Design</span>
+                      </div>
+                      <div className="feature">
+                        <span className="feature-icon">🎯</span>
+                        <span>Interactive Content</span>
+                      </div>
+                      <div className="feature">
+                        <span className="feature-icon">📊</span>
+                        <span>Progress Tracking</span>
+                      </div>
+                      <div className="feature">
+                        <span className="feature-icon">🏆</span>
+                        <span>Achievement System</span>
+                      </div>
+                    </div>
+                    
+                    <div className="start-buttons">
+                      <button onClick={startCourse} className="btn-primary large">
+                        ▶️ Start Learning Journey
+                      </button>
+                      <button onClick={toggleFullscreen} className="btn-secondary">
+                        🖥️ Fullscreen Mode
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
             }
 
             const currentSlideData = courseData.slides[currentSlide];
-            const progress = ((currentSlide + 1) / courseData.slides.length) * 100;
 
             return (
-              <div className="player">
+              <div className={`player ${isFullscreen ? 'fullscreen' : ''}`}>
                 <div className="player-header">
-                  <h1>{courseData.title}</h1>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${progress}%` }} />
+                  <div className="header-info">
+                    <h1>{courseData.title}</h1>
+                    <p>
+                      Lesson {currentSlide + 1} of {courseData.slides.length}: {currentSlideData.title}
+                    </p>
+                  </div>
+                  <div className="header-stats">
+                    <div className="stat-item">
+                      <span className="stat-icon">⏱️</span>
+                      <span>{formatTime(userProgress.timeSpent)}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-icon">🎯</span>
+                      <span>{userProgress.interactionsCount}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-icon">⭐</span>
+                      <span>{userProgress.score}</span>
+                    </div>
+                  </div>
+                  <div className="header-buttons">
+                    <button onClick={toggleFullscreen} className="btn-icon" title="Toggle Fullscreen">
+                      {isFullscreen ? '📱' : '🖥️'}
+                    </button>
+                    <button onClick={resetCourse} className="btn-icon" title="Reset Course">
+                      🔄
+                    </button>
                   </div>
                 </div>
 
-                <div className="slide-container">
-                  <div className="slide">
-                    <div className="slide-icon">{currentSlideData.icon}</div>
-                    <h2>{currentSlideData.title}</h2>
-                    <p>{currentSlideData.content}</p>
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${progress}%` }} />
+                  <div className="progress-text">{Math.round(progress)}% Complete</div>
+                </div>
+
+                <div className="player-content">
+                  <div className="navigation">
+                    <h3>Course Navigation</h3>
+                    {courseData.slides.map((slide, index) => (
+                      <button
+                        key={slide.id}
+                        onClick={() => goToSlide(index)}
+                        className={`nav-item ${currentSlide === index ? 'active' : ''} ${completedSlides.has(index) ? 'completed' : ''}`}
+                      >
+                        <div className="nav-icon">{slide.icon}</div>
+                        <div className="nav-content">
+                          <div className="nav-title">{index + 1}. {slide.title}</div>
+                          <div className="nav-status">
+                            {completedSlides.has(index) ? '✅ Completed' : '⏳ Pending'}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="slide-container">
+                    <div className="slide">
+                      <div className="slide-header">
+                        <div className="slide-icon">{currentSlideData.icon}</div>
+                        <h2>{currentSlideData.title}</h2>
+                      </div>
+                      
+                      <div className="slide-content">
+                        {currentSlide === 3 && currentSlideData.interactiveElements ? (
+                          <div className="interactive-content">
+                            {currentSlideData.content.split(' ').map((word, index) => {
+                              const cleanWord = word.replace(/[.,!?]/g, '');
+                              const isInteractive = currentSlideData.interactiveElements?.includes(cleanWord.toLowerCase());
+                              return (
+                                <span
+                                  key={index}
+                                  className={`word ${isInteractive ? 'interactive-word' : ''} ${clickedWords.has(index) ? 'clicked' : ''}`}
+                                  onClick={() => isInteractive && handleWordClick(index)}
+                                >
+                                  {word}{' '}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="regular-content">
+                            {currentSlideData.content}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {currentSlide === 3 && (
+                        <div className="slide-interactions">
+                          <div className="interaction-hint">
+                            💡 Click on highlighted words to reveal additional insights!
+                          </div>
+                          <div className="interaction-stats">
+                            Interactive elements discovered: {clickedWords.size} / {currentSlideData.interactiveElements?.length || 0}
+                          </div>
+                        </div>
+                      )}
+
+                      {currentSlide === 4 && (
+                        <div className="practice-exercise">
+                          <div className="exercise-content">
+                            <h4>Practice Exercise</h4>
+                            <p>Drag and drop the concepts to their correct categories:</p>
+                            <div className="drag-drop-area">
+                              <div className="category">Theory</div>
+                              <div className="category">Practice</div>
+                              <div className="category">Application</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 <div className="player-controls">
                   <button
-                    onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))}
+                    onClick={prevSlide}
                     disabled={currentSlide === 0}
                     className="btn-control"
                   >
                     ← Previous
                   </button>
-                  
-                  <span>
-                    {currentSlide + 1} of {courseData.slides.length}
-                  </span>
+
+                  <div className="slide-indicator">
+                    {courseData.slides.map((_, index) => (
+                      <div
+                        key={index}
+                        className={`indicator-dot ${index === currentSlide ? 'active' : ''} ${completedSlides.has(index) ? 'completed' : ''}`}
+                        onClick={() => goToSlide(index)}
+                      />
+                    ))}
+                  </div>
 
                   <button
-                    onClick={() => {
-                      if (currentSlide === courseData.slides.length - 1) {
-                        setCourseStarted(false);
-                        setCurrentSlide(0);
-                      } else {
-                        setCurrentSlide(currentSlide + 1);
-                      }
-                    }}
+                    onClick={currentSlide === courseData.slides.length - 1 ? resetCourse : nextSlide}
                     className="btn-control primary"
                   >
-                    {currentSlide === courseData.slides.length - 1 ? 'Restart' : 'Next →'}
+                    {currentSlide === courseData.slides.length - 1 ? '🎉 Complete Course' : 'Next →'}
                   </button>
                 </div>
               </div>
@@ -351,122 +1102,230 @@ jobs:
 
           export default App;
           EOF
-          fi
 
-      - name: "Generate CSS styles"
+      - name: "Generate comprehensive CSS for Editor"
         run: |
-          cd ${{ matrix.app }}
-          
-          cat > src/App.css << 'EOF'
+          cat > editor/src/App.css << 'EOF'
+          /* Reset and base styles */
           * { box-sizing: border-box; margin: 0; padding: 0; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; 
+            background: #f8f9fa;
+            color: #333;
+          }
 
-          /* Common styles */
+          .App { text-align: left; min-height: 100vh; }
+
+          /* Button Components */
           .btn-primary {
-            background: #007bff;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
             color: white;
             border: none;
             padding: 12px 24px;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.3);
           }
-          .btn-primary:hover { background: #0056b3; transform: translateY(-2px); }
+          .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,123,255,0.4); }
+          .btn-primary.large { padding: 16px 32px; font-size: 1.1rem; }
 
-          .btn-control {
+          .btn-secondary {
             background: #6c757d;
             color: white;
             border: none;
+            padding: 8px 16px;
             border-radius: 6px;
-            padding: 12px 20px;
             cursor: pointer;
-            font-weight: 500;
+            font-size: 0.8rem;
             transition: all 0.2s ease;
           }
-          .btn-control:hover:not(:disabled) { background: #545b62; }
-          .btn-control:disabled { background: #dee2e6; color: #6c757d; cursor: not-allowed; }
-          .btn-control.primary { background: #28a745; }
-          .btn-control.primary:hover { background: #1e7e34; }
+          .btn-secondary:hover { background: #545b62; }
+
+          .btn-delete {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+          }
+          .btn-delete:hover { background: #c82333; }
 
           .btn-back {
             background: #6c757d;
             color: white;
             border: none;
             padding: 8px 16px;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 0.9rem;
             transition: all 0.2s ease;
           }
           .btn-back:hover { background: #545b62; }
 
-          /* Dashboard styles */
+          .btn-preview {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+          }
+          .btn-preview:hover { background: #1e7e34; }
+
+          /* Dashboard Styles */
           .dashboard {
-            padding: 32px;
-            max-width: 1200px;
+            padding: 40px;
+            max-width: 1400px;
             margin: 0 auto;
             min-height: 100vh;
-            background: #f8f9fa;
           }
 
           .dashboard-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 32px;
+            margin-bottom: 40px;
             background: white;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
           }
 
           .dashboard-header h1 {
             margin: 0;
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             color: #2c3e50;
             font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
           }
 
           .dashboard-header p {
-            margin: 8px 0 0 0;
+            margin: 12px 0 0 0;
             color: #7f8c8d;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            font-weight: 400;
           }
 
           .projects-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 32px;
           }
 
           .project-card {
             background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.08);
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
+            transition: all 0.4s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+          }
+
+          .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
           }
 
           .project-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            border-color: rgba(102, 126, 234, 0.3);
           }
 
+          .project-card:hover::before { transform: scaleX(1); }
+
           .project-preview {
-            font-size: 4rem;
-            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 140px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            flex-direction: column;
+            color: #6c757d;
+          }
+
+          .preview-icon {
+            font-size: 3.5rem;
+            margin-bottom: 12px;
           }
 
           .project-card h3 {
-            margin: 0 0 8px 0;
-            font-size: 1.3rem;
+            margin: 0 0 12px 0;
+            font-size: 1.4rem;
             color: #2c3e50;
+            font-weight: 600;
           }
 
-          /* Editor styles */
+          .project-card p {
+            margin: 0 0 20px 0;
+            color: #7f8c8d;
+            line-height: 1.6;
+            font-size: 0.95rem;
+          }
+
+          .project-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+
+          .last-edited {
+            font-size: 0.85rem;
+            color: #95a5a6;
+          }
+
+          .add-card {
+            border: 3px dashed #bdc3c7;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+          }
+
+          .add-card:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+          }
+
+          .add-content {
+            text-align: center;
+          }
+
+          .add-icon {
+            font-size: 4rem;
+            color: #bdc3c7;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+          }
+
+          .add-card:hover .add-icon {
+            color: #667eea;
+            transform: scale(1.1);
+          }
+
+          /* Editor Styles */
           .editor {
             height: 100vh;
             display: flex;
@@ -478,74 +1337,303 @@ jobs:
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 24px;
+            padding: 20px 32px;
             background: white;
-            border-bottom: 1px solid #dee2e6;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-bottom: 1px solid #e1e5e9;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
           }
 
-          .editor-toolbar h1 {
+          .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+          }
+
+          .toolbar-left h1 {
             margin: 0;
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             color: #2c3e50;
             font-weight: 600;
           }
 
           .toolbar-center {
             display: flex;
-            gap: 8px;
+            gap: 4px;
             background: #f8f9fa;
             padding: 8px;
-            border-radius: 8px;
+            border-radius: 12px;
+            border: 1px solid #e1e5e9;
           }
 
           .tool-btn {
-            padding: 12px 16px;
+            padding: 12px 18px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             background: transparent;
             color: #6c757d;
             cursor: pointer;
             transition: all 0.2s ease;
             font-size: 0.9rem;
             font-weight: 500;
+            min-width: 100px;
           }
 
-          .tool-btn:hover { background: #e9ecef; color: #495057; }
+          .tool-btn:hover {
+            background: #e9ecef;
+            color: #495057;
+          }
+
           .tool-btn.active {
-            background: #007bff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+          }
+
+          .toolbar-right {
+            display: flex;
+            gap: 12px;
+            align-items: center;
           }
 
           .editor-content {
             flex: 1;
-            padding: 24px;
+            display: flex;
+            overflow: hidden;
+          }
+
+          .sidebar {
+            width: 320px;
+            background: white;
+            border-right: 1px solid #e1e5e9;
+            padding: 32px 24px;
+            overflow-y: auto;
+          }
+
+          .sidebar h3 {
+            margin: 0 0 20px 0;
+            font-size: 1.2rem;
+            color: #2c3e50;
+            font-weight: 600;
+          }
+
+          .slide-item {
+            display: flex;
+            gap: 16px;
+            padding: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            background: #f8f9fa;
+            transition: all 0.2s ease;
+          }
+
+          .slide-item.active {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-color: #667eea;
+          }
+
+          .slide-number {
+            width: 36px;
+            height: 28px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #495057;
+          }
+
+          .slide-info {
+            flex: 1;
+          }
+
+          .slide-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+          }
+
+          .slide-elements {
+            font-size: 0.8rem;
+            color: #6c757d;
+          }
+
+          .properties {
+            margin-top: 24px;
+          }
+
+          .property-group {
+            margin-bottom: 20px;
+          }
+
+          .property-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #495057;
+          }
+
+          .property-group input, .property-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s ease;
+          }
+
+          .property-group input:focus, .property-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+          }
+
+          .property-group textarea {
+            resize: vertical;
+            font-family: inherit;
+          }
+
+          .position-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+          }
+
+          .no-selection {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+          }
+
+          .no-selection-icon {
+            font-size: 3.5rem;
+            margin-bottom: 16px;
+          }
+
+          .canvas-container {
+            flex: 1;
+            padding: 32px;
             overflow: auto;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            background: #fafbfc;
+          }
+
+          .canvas-header {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
+            margin-bottom: 24px;
+          }
+
+          .canvas-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            color: #2c3e50;
+            font-weight: 600;
+          }
+
+          .canvas-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+            padding: 8px 16px;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e1e5e9;
           }
 
           .canvas-area {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid #e1e5e9;
           }
 
           .canvas-element {
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
           }
 
           .canvas-element:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
           }
 
           .canvas-element.selected {
-            box-shadow: 0 0 0 2px #2196f3;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
           }
 
-          /* Player styles */
+          .canvas-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+            padding: 16px 24px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e1e5e9;
+          }
+
+          .element-count {
+            font-size: 0.9rem;
+            color: #495057;
+            font-weight: 600;
+          }
+
+          .instructions {
+            font-size: 0.9rem;
+            color: #6c757d;
+          }
+
+          .editor-error {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            gap: 20px;
+          }
+
+          /* Responsive Design */
+          @media (max-width: 1200px) {
+            .dashboard { padding: 24px; }
+            .projects-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+          }
+
+          @media (max-width: 768px) {
+            .dashboard { padding: 16px; }
+            .dashboard-header { flex-direction: column; text-align: center; gap: 20px; }
+            .dashboard-header h1 { font-size: 2.2rem; }
+            .projects-grid { grid-template-columns: 1fr; }
+            
+            .editor-toolbar { flex-direction: column; gap: 16px; padding: 16px; }
+            .toolbar-center { order: -1; }
+            
+            .editor-content { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #e1e5e9; }
+            
+            .canvas-container { padding: 16px; }
+            .canvas-area { width: 100% !important; max-width: 100%; }
+          }
+          EOF
+
+      - name: "Generate comprehensive CSS for Player"
+        run: |
+          cat > player/src/App.css << 'EOF'
+          /* Reset and base styles */
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #333;
+          }
+
+          /* Start Screen */
           .start-screen {
             min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -557,32 +1645,189 @@ jobs:
 
           .start-content {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            border-radius: 20px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
             padding: 48px 40px;
-            max-width: 500px;
+            max-width: 650px;
             text-align: center;
           }
 
           .start-icon {
-            font-size: 5rem;
-            margin-bottom: 24px;
+            font-size: 5.5rem;
+            margin-bottom: 28px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
           }
 
           .start-content h1 {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             font-weight: 700;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             color: #2c3e50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
           }
 
           .start-content p {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             color: #6c757d;
             margin-bottom: 32px;
-            line-height: 1.6;
+            line-height: 1.7;
           }
 
+          .course-meta {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin: 32px 0;
+            flex-wrap: wrap;
+          }
+
+          .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            color: #495057;
+            font-weight: 500;
+            border: 1px solid #e9ecef;
+          }
+
+          .meta-icon {
+            font-size: 1.2rem;
+          }
+
+          .course-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin: 32px 0;
+          }
+
+          .feature {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: #495057;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+          }
+
+          .feature:hover {
+            background: #e3f2fd;
+            border-color: #667eea;
+            transform: translateY(-2px);
+          }
+
+          .feature-icon {
+            font-size: 1.3rem;
+          }
+
+          .start-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+          }
+
+          /* Button Components */
+          .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0,123,255,0.3);
+          }
+
+          .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 24px rgba(0,123,255,0.4);
+          }
+
+          .btn-primary.large {
+            padding: 18px 36px;
+            font-size: 1.1rem;
+          }
+
+          .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+          }
+
+          .btn-secondary:hover {
+            background: #545b62;
+            transform: translateY(-2px);
+          }
+
+          .btn-control {
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px 24px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+          }
+
+          .btn-control:hover:not(:disabled) {
+            background: #545b62;
+            transform: translateY(-1px);
+          }
+
+          .btn-control:disabled {
+            background: #dee2e6;
+            color: #6c757d;
+            cursor: not-allowed;
+          }
+
+          .btn-control.primary {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+          }
+
+          .btn-control.primary:hover {
+            box-shadow: 0 4px 16px rgba(40, 167, 69, 0.4);
+          }
+
+          .btn-icon {
+            background: #f8f9fa;
+            color: #495057;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1rem;
+          }
+
+          .btn-icon:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+          }
+
+          /* Player Layout */
           .player {
             min-height: 100vh;
             background: #f8f9fa;
@@ -590,109 +1835,542 @@ jobs:
             flex-direction: column;
           }
 
+          .player.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+          }
+
           .player-header {
             background: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            padding: 20px 32px;
-          }
-
-          .player-header h1 {
-            font-size: 1.6rem;
-            font-weight: 600;
-            margin: 0 0 12px 0;
-            color: #2c3e50;
-          }
-
-          .progress-bar {
-            background: #e9ecef;
-            height: 8px;
-            border-radius: 4px;
-            overflow: hidden;
-          }
-
-          .progress-fill {
-            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
-            height: 100%;
-            transition: width 0.3s ease;
-          }
-
-          .slide-container {
-            flex: 1;
-            padding: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-          }
-
-          .slide {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 600px;
-            min-height: 400px;
-            padding: 48px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            text-align: center;
-          }
-
-          .slide-icon {
-            font-size: 4rem;
-            margin-bottom: 24px;
-          }
-
-          .slide h2 {
-            font-size: 2rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin: 0 0 24px 0;
-          }
-
-          .slide p {
-            font-size: 1.3rem;
-            line-height: 1.6;
-            color: #495057;
-          }
-
-          .player-controls {
-            background: white;
-            border-top: 1px solid #e9ecef;
-            padding: 20px 32px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+            padding: 24px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
           }
 
-          /* Responsive design */
+          .header-info h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: #2c3e50;
+          }
+
+          .header-info p {
+            color: #6c757d;
+            margin: 0;
+            font-size: 1rem;
+          }
+
+          .header-stats {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+          }
+
+          .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-weight: 500;
+            color: #495057;
+            border: 1px solid #e9ecef;
+          }
+
+          .stat-icon {
+            font-size: 1.1rem;
+          }
+
+          .header-buttons {
+            display: flex;
+            gap: 12px;
+          }
+
+          .progress-bar {
+            background: #e9ecef;
+            height: 6px;
+            position: relative;
+          }
+
+          .progress-fill {
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            height: 100%;
+            transition: width 0.5s ease;
+          }
+
+          .progress-text {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            color: #495057;
+            font-weight: 600;
+            background: white;
+            padding: 2px 12px;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+          }
+
+          .player-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+          }
+
+          .navigation {
+            width: 320px;
+            background: white;
+            border-right: 1px solid #e9ecef;
+            padding: 28px 20px;
+            overflow-y: auto;
+          }
+
+          .navigation h3 {
+            margin: 0 0 24px 0;
+            font-size: 1.2rem;
+            color: #2c3e50;
+            font-weight: 600;
+          }
+
+          .nav-item {
+            width: 100%;
+            text-align: left;
+            padding: 18px;
+            border-radius: 12px;
+            border: none;
+            background: #f8f9fa;
+            color: #495057;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            border: 2px solid transparent;
+          }
+
+          .nav-item:hover {
+            background: #e9ecef;
+            transform: translateX(4px);
+            border-color: rgba(102, 126, 234, 0.2);
+          }
+
+          .nav-item.active {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            color: #1976d2;
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+          }
+
+          .nav-item.completed {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);
+          }
+
+          .nav-icon {
+            font-size: 1.8rem;
+            min-width: 40px;
+          }
+
+          .nav-content {
+            flex: 1;
+          }
+
+          .nav-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+          }
+
+          .nav-status {
+            font-size: 0.8rem;
+            opacity: 0.8;
+          }
+
+          .slide-container {
+            flex: 1;
+            padding: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #fafbfc;
+          }
+
+          .slide {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 800px;
+            min-height: 500px;
+            padding: 48px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border: 1px solid #e9ecef;
+          }
+
+          .slide-header {
+            text-align: center;
+            margin-bottom: 36px;
+          }
+
+          .slide-icon {
+            font-size: 4.5rem;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+          }
+
+          .slide-header h2 {
+            font-size: 2.4rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+          }
+
+          .slide-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .regular-content {
+            font-size: 1.3rem;
+            line-height: 1.8;
+            color: #495057;
+            text-align: center;
+          }
+
+          .interactive-content {
+            font-size: 1.3rem;
+            line-height: 1.8;
+            color: #495057;
+            text-align: center;
+          }
+
+          .word {
+            transition: all 0.2s ease;
+          }
+
+          .interactive-word {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 1px solid #f39c12;
+            font-weight: 600;
+            position: relative;
+          }
+
+          .interactive-word:hover {
+            background: linear-gradient(135deg, #ffe8a1 0%, #fdcb6e 100%);
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
+          }
+
+          .interactive-word.clicked {
+            background: linear-gradient(135deg, #d1f2eb 0%, #a3e4d7 100%);
+            color: #00695c;
+            border-color: #26a69a;
+          }
+
+          .slide-interactions {
+            margin-top: 32px;
+            padding: 24px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+          }
+
+          .interaction-hint {
+            font-size: 1rem;
+            color: #495057;
+            margin-bottom: 12px;
+            text-align: center;
+            font-weight: 500;
+          }
+
+          .interaction-stats {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-align: center;
+          }
+
+          .practice-exercise {
+            margin-top: 32px;
+            padding: 28px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 16px;
+            border: 2px solid #dee2e6;
+          }
+
+          .exercise-content h4 {
+            margin-bottom: 16px;
+            color: #2c3e50;
+            font-size: 1.2rem;
+          }
+
+          .drag-drop-area {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+          }
+
+          .category {
+            padding: 20px;
+            background: white;
+            border: 2px dashed #adb5bd;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            color: #495057;
+            min-width: 120px;
+            transition: all 0.3s ease;
+          }
+
+          .category:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+          }
+
+          .player-controls {
+            background: white;
+            border-top: 1px solid #e9ecef;
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 16px rgba(0,0,0,0.05);
+          }
+
+          .slide-indicator {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+          }
+
+          .indicator-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #dee2e6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+          }
+
+          .indicator-dot:hover {
+            background: #adb5bd;
+            transform: scale(1.3);
+          }
+
+          .indicator-dot.active {
+            background: #007bff;
+            transform: scale(1.4);
+            box-shadow: 0 2px 8px rgba(0,123,255,0.4);
+          }
+
+          .indicator-dot.completed {
+            background: #28a745;
+          }
+
+          /* Responsive Design */
+          @media (max-width: 1200px) {
+            .slide-container { padding: 32px; }
+            .slide { padding: 36px; }
+          }
+
           @media (max-width: 768px) {
-            .dashboard { padding: 16px; }
-            .dashboard-header { flex-direction: column; text-align: center; gap: 16px; }
-            .projects-grid { grid-template-columns: 1fr; }
-            .editor-toolbar { flex-direction: column; gap: 12px; }
-            .start-content { padding: 32px 24px; margin: 16px; }
-            .slide-container { padding: 20px; }
-            .slide { padding: 32px 24px; }
-            .player-controls { flex-direction: column; gap: 16px; }
+            .start-content {
+              padding: 32px 24px;
+              margin: 16px;
+            }
+
+            .start-content h1 {
+              font-size: 2.2rem;
+            }
+
+            .course-meta {
+              flex-direction: column;
+              align-items: center;
+            }
+
+            .course-features {
+              grid-template-columns: 1fr;
+            }
+
+            .start-buttons {
+              flex-direction: column;
+            }
+
+            .player-header {
+              padding: 16px 20px;
+              flex-direction: column;
+              gap: 16px;
+            }
+
+            .header-stats {
+              gap: 16px;
+            }
+
+            .player-content {
+              flex-direction: column;
+            }
+
+            .navigation {
+              width: 100%;
+              border-right: none;
+              border-bottom: 1px solid #e9ecef;
+              max-height: 200px;
+            }
+
+            .slide-container {
+              padding: 20px;
+            }
+
+            .slide {
+              padding: 32px 24px;
+              min-height: 400px;
+            }
+
+            .slide-header h2 {
+              font-size: 1.8rem;
+            }
+
+            .regular-content, .interactive-content {
+              font-size: 1.1rem;
+            }
+
+            .player-controls {
+              padding: 16px 20px;
+              flex-direction: column;
+              gap: 20px;
+            }
+
+            .drag-drop-area {
+              flex-direction: column;
+              align-items: center;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .start-content h1 {
+              font-size: 1.8rem;
+            }
+
+            .slide-header h2 {
+              font-size: 1.5rem;
+            }
+
+            .meta-item {
+              padding: 8px 12px;
+              font-size: 0.85rem;
+            }
           }
           EOF
 
-      - name: "Update package.json for deployment"
+      - name: "Create React entry points"
         run: |
-          cd ${{ matrix.app }}
-          
-          # Set homepage for GitHub Pages subdirectory deployment
-          npm pkg set homepage="/Unit0i/${{ matrix.app }}"
+          # Editor index.tsx
+          cat > editor/src/index.tsx << 'EOF'
+          import React from 'react';
+          import ReactDOM from 'react-dom/client';
+          import App from './App';
+
+          const root = ReactDOM.createRoot(
+            document.getElementById('root') as HTMLElement
+          );
+
+          root.render(
+            <React.StrictMode>
+              <App />
+            </React.StrictMode>
+          );
+          EOF
+
+          # Player index.tsx
+          cat > player/src/index.tsx << 'EOF'
+          import React from 'react';
+          import ReactDOM from 'react-dom/client';
+          import App from './App';
+
+          const root = ReactDOM.createRoot(
+            document.getElementById('root') as HTMLElement
+          );
+
+          root.render(
+            <React.StrictMode>
+              <App />
+            </React.StrictMode>
+          );
+          EOF
+
+      - name: "Upload project structure"
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-structure
+          path: .
+          retention-days: 1
+
+  # Job 2: Build Applications
+  build:
+    name: "Build React Applications"
+    runs-on: ubuntu-latest
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [editor, player]
+    
+    steps:
+      - name: "Download project structure"
+        uses: actions/download-artifact@v4
+        with:
+          name: project-structure
+          path: .
+
+      - name: "Setup Node.js with proper caching"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: '${{ matrix.app }}/package.json'
+
+      - name: "Install dependencies"
+        working-directory: ${{ matrix.app }}
+        run: |
+          npm install --legacy-peer-deps
+          # Verify installation
+          if [ ! -f "node_modules/.bin/react-scripts" ]; then
+            echo "Installing react-scripts manually..."
+            npm install react-scripts --save --legacy-peer-deps
+          fi
 
       - name: "Build application"
-        run: |
-          cd ${{ matrix.app }}
-          npm run build
+        working-directory: ${{ matrix.app }}
+        run: npm run build
         env:
           CI: true
           GENERATE_SOURCEMAP: false
           NODE_OPTIONS: "--max-old-space-size=4096"
+
+      - name: "Verify build output"
+        run: |
+          if [ -d "${{ matrix.app }}/build" ]; then
+            echo "✅ Build successful for ${{ matrix.app }}"
+            ls -la ${{ matrix.app }}/build/
+          else
+            echo "❌ Build failed for ${{ matrix.app }}"
+            exit 1
+          fi
 
       - name: "Upload build artifacts"
         uses: actions/upload-artifact@v4
@@ -702,6 +2380,7 @@ jobs:
           compression-level: 9
           retention-days: 1
 
+  # Job 3: Deploy to GitHub Pages
   deploy:
     if: github.ref == 'refs/heads/main'
     needs: build
@@ -711,27 +2390,27 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
-      - name: "Download all artifacts"
+      - name: "Download all build artifacts"
         uses: actions/download-artifact@v4
         
-      - name: "Prepare deployment structure"
+      - name: "Organize deployment structure"
         run: |
           mkdir -p dist
           mv editor-build dist/editor
           mv player-build dist/player
           
-          # Create root navigation page
+          # Create professional navigation page
           cat > dist/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>E-Learning Authoring Tool</title>
+            <title>E-Learning Authoring Suite</title>
             <style>
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 min-height: 100vh;
                 display: flex;
@@ -741,99 +2420,178 @@ jobs:
               }
               .container {
                 background: white;
-                border-radius: 16px;
-                box-shadow: 0 25px 50px rgba(0,0,0,0.2);
-                padding: 3rem;
-                max-width: 600px;
+                border-radius: 24px;
+                box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+                padding: 3.5rem;
+                max-width: 800px;
                 text-align: center;
+                border: 1px solid rgba(255,255,255,0.2);
+              }
+              .logo {
+                font-size: 5rem;
+                margin-bottom: 1.5rem;
+                filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
               }
               h1 {
-                font-size: 2.5rem;
+                font-size: 3rem;
                 color: #2c3e50;
                 margin-bottom: 1rem;
                 font-weight: 700;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
               }
-              p {
-                font-size: 1.2rem;
+              .subtitle {
+                font-size: 1.3rem;
                 color: #6c757d;
-                margin-bottom: 2.5rem;
+                margin-bottom: 3rem;
                 line-height: 1.6;
+                font-weight: 400;
               }
               .apps {
                 display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 1.5rem;
-                margin-bottom: 2rem;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 2rem;
+                margin: 3rem 0;
               }
               .app-card {
-                background: #f8f9fa;
-                border-radius: 12px;
-                padding: 2rem 1.5rem;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 20px;
+                padding: 2.5rem 2rem;
                 text-decoration: none;
                 color: inherit;
-                transition: all 0.3s ease;
+                transition: all 0.4s ease;
                 border: 2px solid transparent;
+                position: relative;
+                overflow: hidden;
               }
+              .app-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+                transform: scaleX(0);
+                transition: transform 0.3s ease;
+              }
+              .app-card:hover::before { transform: scaleX(1); }
               .app-card:hover {
-                transform: translateY(-4px);
-                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-                border-color: #007bff;
+                transform: translateY(-8px);
+                box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+                border-color: rgba(102, 126, 234, 0.3);
+                background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
               }
               .app-icon {
-                font-size: 3rem;
-                margin-bottom: 1rem;
+                font-size: 3.5rem;
+                margin-bottom: 1.5rem;
+                transition: transform 0.3s ease;
               }
+              .app-card:hover .app-icon { transform: scale(1.1); }
               .app-title {
-                font-size: 1.3rem;
-                font-weight: 600;
+                font-size: 1.5rem;
+                font-weight: 700;
                 color: #2c3e50;
-                margin-bottom: 0.5rem;
+                margin-bottom: 0.75rem;
               }
               .app-desc {
-                font-size: 0.95rem;
+                font-size: 1rem;
                 color: #6c757d;
-                line-height: 1.4;
+                line-height: 1.5;
+                margin-bottom: 1.5rem;
+              }
+              .app-features {
+                display: flex;
+                justify-content: center;
+                gap: 1rem;
+                flex-wrap: wrap;
+              }
+              .feature-tag {
+                background: rgba(102, 126, 234, 0.1);
+                color: #667eea;
+                padding: 0.3rem 0.8rem;
+                border-radius: 12px;
+                font-size: 0.8rem;
+                font-weight: 500;
               }
               .footer {
-                font-size: 0.9rem;
-                color: #95a5a6;
-                margin-top: 1.5rem;
+                margin-top: 3rem;
+                padding-top: 2rem;
+                border-top: 1px solid #e9ecef;
               }
-              @media (max-width: 640px) {
-                .container { padding: 2rem; margin: 1rem; }
-                h1 { font-size: 2rem; }
+              .footer-text {
+                font-size: 0.95rem;
+                color: #95a5a6;
+              }
+              .tech-stack {
+                display: flex;
+                justify-content: center;
+                gap: 1.5rem;
+                margin-top: 1rem;
+                flex-wrap: wrap;
+              }
+              .tech-item {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: 0.85rem;
+                color: #6c757d;
+              }
+              @media (max-width: 768px) {
+                .container { padding: 2.5rem 2rem; margin: 1rem; }
+                h1 { font-size: 2.2rem; }
                 .apps { grid-template-columns: 1fr; }
+                .app-card { padding: 2rem 1.5rem; }
+                .tech-stack { flex-direction: column; align-items: center; }
               }
             </style>
           </head>
           <body>
             <div class="container">
-              <h1>🎓 E-Learning Authoring Tool</h1>
-              <p>Create and deliver engaging interactive learning experiences</p>
+              <div class="logo">🎓</div>
+              <h1>E-Learning Authoring Suite</h1>
+              <p class="subtitle">Professional tools for creating and delivering exceptional learning experiences</p>
               
               <div class="apps">
                 <a href="./editor/" class="app-card">
                   <div class="app-icon">🎨</div>
                   <div class="app-title">Course Editor</div>
-                  <div class="app-desc">Design and build interactive learning content</div>
+                  <div class="app-desc">Design and build interactive learning content with our intuitive drag-and-drop interface</div>
+                  <div class="app-features">
+                    <span class="feature-tag">Visual Builder</span>
+                    <span class="feature-tag">Real-time Preview</span>
+                    <span class="feature-tag">Multi-media</span>
+                  </div>
                 </a>
                 
                 <a href="./player/" class="app-card">
                   <div class="app-icon">🎬</div>
                   <div class="app-title">Course Player</div>
-                  <div class="app-desc">Experience and preview completed courses</div>
+                  <div class="app-desc">Experience and preview completed courses with immersive interactive features</div>
+                  <div class="app-features">
+                    <span class="feature-tag">Interactive</span>
+                    <span class="feature-tag">Progress Tracking</span>
+                    <span class="feature-tag">Responsive</span>
+                  </div>
                 </a>
               </div>
               
               <div class="footer">
-                Built with React • Powered by GitHub Actions
+                <div class="footer-text">Built with modern web technologies and deployed via GitHub Actions</div>
+                <div class="tech-stack">
+                  <div class="tech-item">⚛️ React 18</div>
+                  <div class="tech-item">📘 TypeScript</div>
+                  <div class="tech-item">🎨 Modern CSS</div>
+                  <div class="tech-item">🚀 GitHub Pages</div>
+                </div>
               </div>
             </div>
           </body>
           </html>
           EOF
 
-      - name: "Setup Pages"
+      - name: "Setup GitHub Pages"
         uses: actions/configure-pages@v4
 
       - name: "Upload to Pages"
