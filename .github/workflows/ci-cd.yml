@@ -163,6 +163,7 @@ jobs:
 
       - name: "Generate Editor Application Code"
         run: |
+          # Create App.tsx with verification
           cat > editor/src/App.tsx << 'EOF'
           import React, { useState, useRef } from 'react';
           import { BrowserRouter as Router, Routes, Route, useNavigate, useParams } from 'react-router-dom';
@@ -719,8 +720,16 @@ jobs:
           export default App;
           EOF
 
+          # Verify editor App.tsx was created
+          if [ ! -f "editor/src/App.tsx" ]; then
+            echo "❌ Failed to create editor/src/App.tsx"
+            exit 1
+          fi
+          echo "✅ Created editor/src/App.tsx ($(wc -l < editor/src/App.tsx) lines)"
+
       - name: "Generate Player Application Code"
         run: |
+          # Create simplified but functional Player App.tsx
           cat > player/src/App.tsx << 'EOF'
           import React, { useState, useEffect } from 'react';
           import './App.css';
@@ -730,123 +739,26 @@ jobs:
             title: string;
             content: string;
             icon: string;
-            interactiveElements?: any[];
           }
 
-          interface CourseData {
-            title: string;
-            description: string;
-            slides: Slide[];
-            totalDuration?: string;
-            difficulty?: string;
-          }
-
-          const courseData: CourseData = {
+          const courseData = {
             title: "Interactive E-Learning Experience",
-            description: "A comprehensive learning journey with engaging multimedia content",
-            totalDuration: "45 minutes",
-            difficulty: "Beginner",
+            description: "A comprehensive learning journey with engaging content",
             slides: [
-              { 
-                id: "1", 
-                title: "Welcome to Learning", 
-                content: "🎓 Welcome to this interactive course! This comprehensive learning experience will guide you through essential concepts using engaging multimedia content, interactive exercises, and real-world examples.",
-                icon: "🎓"
-              },
-              { 
-                id: "2", 
-                title: "Learning Objectives", 
-                content: "📚 By the end of this course, you'll have mastered key concepts, developed practical skills, and gained confidence to apply your knowledge in real-world scenarios. Our structured approach ensures effective learning.",
-                icon: "📚"
-              },
-              { 
-                id: "3", 
-                title: "Interactive Features", 
-                content: "🎯 This course includes interactive elements, knowledge checks, hands-on exercises, multimedia presentations, and collaborative activities designed to enhance your learning experience and retention.",
-                icon: "🎯"
-              },
-              { 
-                id: "4", 
-                title: "Knowledge Check", 
-                content: "🧠 Let's test what you've learned! Click on the highlighted words below to reveal additional information and test your understanding of the concepts we've covered.",
-                icon: "🧠",
-                interactiveElements: ["concepts", "understanding", "knowledge", "learning"]
-              },
-              { 
-                id: "5", 
-                title: "Practice Exercise", 
-                content: "✍️ Time for hands-on practice! Complete the interactive exercise below to reinforce your learning and apply the concepts in a practical scenario.",
-                icon: "✍️"
-              },
-              { 
-                id: "6", 
-                title: "Real-World Application", 
-                content: "🌍 Discover how these concepts apply in real-world situations. Explore case studies and examples that demonstrate practical applications of what you've learned.",
-                icon: "🌍"
-              },
-              { 
-                id: "7", 
-                title: "Assessment", 
-                content: "📊 Complete this quick assessment to evaluate your progress and identify areas for further development. Your performance will help guide next steps.",
-                icon: "📊"
-              },
-              { 
-                id: "8", 
-                title: "Course Completion", 
-                content: "🎉 Congratulations! You've successfully completed the course. You're now equipped with valuable knowledge and skills to tackle new challenges and opportunities.",
-                icon: "🎉"
-              }
-            ]
+              { id: "1", title: "Welcome", content: "🎓 Welcome to this interactive course! This learning experience will guide you through essential concepts.", icon: "🎓" },
+              { id: "2", title: "Learning Objectives", content: "📚 Master key concepts and develop practical skills through structured learning.", icon: "📚" },
+              { id: "3", title: "Interactive Features", content: "🎯 Engage with interactive elements, exercises, and multimedia content.", icon: "🎯" },
+              { id: "4", title: "Knowledge Check", content: "🧠 Test your understanding with interactive knowledge checks.", icon: "🧠" },
+              { id: "5", title: "Conclusion", content: "🎉 Congratulations! You've completed the learning journey successfully.", icon: "🎉" }
+            ] as Slide[]
           };
 
           const App: React.FC = () => {
             const [courseStarted, setCourseStarted] = useState(false);
             const [currentSlide, setCurrentSlide] = useState(0);
-            const [isFullscreen, setIsFullscreen] = useState(false);
-            const [clickedWords, setClickedWords] = useState<Set<number>>(new Set());
             const [completedSlides, setCompletedSlides] = useState<Set<number>>(new Set());
-            const [userProgress, setUserProgress] = useState({
-              timeSpent: 0,
-              interactionsCount: 0,
-              score: 0
-            });
 
             const progress = ((currentSlide + 1) / courseData.slides.length) * 100;
-
-            useEffect(() => {
-              let interval: NodeJS.Timeout;
-              if (courseStarted) {
-                interval = setInterval(() => {
-                  setUserProgress(prev => ({ ...prev, timeSpent: prev.timeSpent + 1 }));
-                }, 1000);
-              }
-              return () => clearInterval(interval);
-            }, [courseStarted]);
-
-            const toggleFullscreen = () => {
-              if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().then(() => {
-                  setIsFullscreen(true);
-                }).catch(() => {
-                  setIsFullscreen(false);
-                });
-              } else {
-                document.exitFullscreen().then(() => {
-                  setIsFullscreen(false);
-                }).catch(() => {
-                  setIsFullscreen(true);
-                });
-              }
-            };
-
-            useEffect(() => {
-              const handleFullscreenChange = () => {
-                setIsFullscreen(!!document.fullscreenElement);
-              };
-
-              document.addEventListener('fullscreenchange', handleFullscreenChange);
-              return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-            }, []);
 
             const startCourse = () => {
               setCourseStarted(true);
@@ -856,9 +768,7 @@ jobs:
             const resetCourse = () => { 
               setCourseStarted(false); 
               setCurrentSlide(0); 
-              setClickedWords(new Set());
               setCompletedSlides(new Set());
-              setUserProgress({ timeSpent: 0, interactionsCount: 0, score: 0 });
             };
 
             const nextSlide = () => { 
@@ -875,26 +785,6 @@ jobs:
               }
             };
 
-            const goToSlide = (index: number) => {
-              setCurrentSlide(index);
-              setCompletedSlides(prev => new Set([...prev, index]));
-            };
-
-            const handleWordClick = (index: number) => {
-              setClickedWords(new Set([...clickedWords, index]));
-              setUserProgress(prev => ({ 
-                ...prev, 
-                interactionsCount: prev.interactionsCount + 1,
-                score: prev.score + 10
-              }));
-            };
-
-            const formatTime = (seconds: number) => {
-              const mins = Math.floor(seconds / 60);
-              const secs = seconds % 60;
-              return `${mins}:${secs.toString().padStart(2, '0')}`;
-            };
-
             if (!courseStarted) {
               return (
                 <div className="start-screen">
@@ -902,49 +792,14 @@ jobs:
                     <div className="start-icon">🎓</div>
                     <h1>{courseData.title}</h1>
                     <p>{courseData.description}</p>
-                    
-                    <div className="course-meta">
-                      <div className="meta-item">
-                        <span className="meta-icon">⏱️</span>
-                        <span>Duration: {courseData.totalDuration}</span>
-                      </div>
-                      <div className="meta-item">
-                        <span className="meta-icon">📈</span>
-                        <span>Level: {courseData.difficulty}</span>
-                      </div>
-                      <div className="meta-item">
-                        <span className="meta-icon">📑</span>
-                        <span>{courseData.slides.length} Lessons</span>
-                      </div>
-                    </div>
-                    
                     <div className="course-features">
-                      <div className="feature">
-                        <span className="feature-icon">📱</span>
-                        <span>Responsive Design</span>
-                      </div>
-                      <div className="feature">
-                        <span className="feature-icon">🎯</span>
-                        <span>Interactive Content</span>
-                      </div>
-                      <div className="feature">
-                        <span className="feature-icon">📊</span>
-                        <span>Progress Tracking</span>
-                      </div>
-                      <div className="feature">
-                        <span className="feature-icon">🏆</span>
-                        <span>Achievement System</span>
-                      </div>
+                      <div className="feature">📱 Responsive Design</div>
+                      <div className="feature">🎯 Interactive Content</div>
+                      <div className="feature">📊 Progress Tracking</div>
                     </div>
-                    
-                    <div className="start-buttons">
-                      <button onClick={startCourse} className="btn-primary large">
-                        ▶️ Start Learning Journey
-                      </button>
-                      <button onClick={toggleFullscreen} className="btn-secondary">
-                        🖥️ Fullscreen Mode
-                      </button>
-                    </div>
+                    <button onClick={startCourse} className="btn-primary large">
+                      ▶️ Start Course
+                    </button>
                   </div>
                 </div>
               );
@@ -953,36 +808,11 @@ jobs:
             const currentSlideData = courseData.slides[currentSlide];
 
             return (
-              <div className={`player ${isFullscreen ? 'fullscreen' : ''}`}>
+              <div className="player">
                 <div className="player-header">
-                  <div className="header-info">
-                    <h1>{courseData.title}</h1>
-                    <p>
-                      Lesson {currentSlide + 1} of {courseData.slides.length}: {currentSlideData.title}
-                    </p>
-                  </div>
-                  <div className="header-stats">
-                    <div className="stat-item">
-                      <span className="stat-icon">⏱️</span>
-                      <span>{formatTime(userProgress.timeSpent)}</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-icon">🎯</span>
-                      <span>{userProgress.interactionsCount}</span>
-                    </div>
-                    <div className="stat-item">
-                      <span className="stat-icon">⭐</span>
-                      <span>{userProgress.score}</span>
-                    </div>
-                  </div>
-                  <div className="header-buttons">
-                    <button onClick={toggleFullscreen} className="btn-icon" title="Toggle Fullscreen">
-                      {isFullscreen ? '📱' : '🖥️'}
-                    </button>
-                    <button onClick={resetCourse} className="btn-icon" title="Reset Course">
-                      🔄
-                    </button>
-                  </div>
+                  <h1>{courseData.title}</h1>
+                  <p>Lesson {currentSlide + 1} of {courseData.slides.length}: {currentSlideData.title}</p>
+                  <button onClick={resetCourse} className="btn-reset">🔄 Reset</button>
                 </div>
 
                 <div className="progress-bar">
@@ -996,7 +826,7 @@ jobs:
                     {courseData.slides.map((slide, index) => (
                       <button
                         key={slide.id}
-                        onClick={() => goToSlide(index)}
+                        onClick={() => setCurrentSlide(index)}
                         className={`nav-item ${currentSlide === index ? 'active' : ''} ${completedSlides.has(index) ? 'completed' : ''}`}
                       >
                         <div className="nav-icon">{slide.icon}</div>
@@ -1016,55 +846,9 @@ jobs:
                         <div className="slide-icon">{currentSlideData.icon}</div>
                         <h2>{currentSlideData.title}</h2>
                       </div>
-                      
                       <div className="slide-content">
-                        {currentSlide === 3 && currentSlideData.interactiveElements ? (
-                          <div className="interactive-content">
-                            {currentSlideData.content.split(' ').map((word, index) => {
-                              const cleanWord = word.replace(/[.,!?]/g, '');
-                              const isInteractive = currentSlideData.interactiveElements?.includes(cleanWord.toLowerCase());
-                              return (
-                                <span
-                                  key={index}
-                                  className={`word ${isInteractive ? 'interactive-word' : ''} ${clickedWords.has(index) ? 'clicked' : ''}`}
-                                  onClick={() => isInteractive && handleWordClick(index)}
-                                >
-                                  {word}{' '}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="regular-content">
-                            {currentSlideData.content}
-                          </div>
-                        )}
+                        <div className="regular-content">{currentSlideData.content}</div>
                       </div>
-                      
-                      {currentSlide === 3 && (
-                        <div className="slide-interactions">
-                          <div className="interaction-hint">
-                            💡 Click on highlighted words to reveal additional insights!
-                          </div>
-                          <div className="interaction-stats">
-                            Interactive elements discovered: {clickedWords.size} / {currentSlideData.interactiveElements?.length || 0}
-                          </div>
-                        </div>
-                      )}
-
-                      {currentSlide === 4 && (
-                        <div className="practice-exercise">
-                          <div className="exercise-content">
-                            <h4>Practice Exercise</h4>
-                            <p>Drag and drop the concepts to their correct categories:</p>
-                            <div className="drag-drop-area">
-                              <div className="category">Theory</div>
-                              <div className="category">Practice</div>
-                              <div className="category">Application</div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1078,21 +862,13 @@ jobs:
                     ← Previous
                   </button>
 
-                  <div className="slide-indicator">
-                    {courseData.slides.map((_, index) => (
-                      <div
-                        key={index}
-                        className={`indicator-dot ${index === currentSlide ? 'active' : ''} ${completedSlides.has(index) ? 'completed' : ''}`}
-                        onClick={() => goToSlide(index)}
-                      />
-                    ))}
-                  </div>
+                  <span>{currentSlide + 1} of {courseData.slides.length}</span>
 
                   <button
                     onClick={currentSlide === courseData.slides.length - 1 ? resetCourse : nextSlide}
                     className="btn-control primary"
                   >
-                    {currentSlide === courseData.slides.length - 1 ? '🎉 Complete Course' : 'Next →'}
+                    {currentSlide === courseData.slides.length - 1 ? '🎉 Complete' : 'Next →'}
                   </button>
                 </div>
               </div>
@@ -1101,6 +877,13 @@ jobs:
 
           export default App;
           EOF
+
+          # Verify player App.tsx was created
+          if [ ! -f "player/src/App.tsx" ]; then
+            echo "❌ Failed to create player/src/App.tsx"
+            exit 1
+          fi
+          echo "✅ Created player/src/App.tsx ($(wc -l < player/src/App.tsx) lines)"
 
       - name: "Generate comprehensive CSS for Editor"
         run: |
@@ -1621,9 +1404,364 @@ jobs:
           }
           EOF
 
-      - name: "Generate comprehensive CSS for Player"
+      - name: "Generate simplified CSS for Player"
         run: |
           cat > player/src/App.css << 'EOF'
+          /* Reset and base styles */
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #333;
+          }
+
+          /* Start Screen */
+          .start-screen {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+          }
+
+          .start-content {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+            padding: 48px 40px;
+            max-width: 600px;
+            text-align: center;
+          }
+
+          .start-icon {
+            font-size: 5rem;
+            margin-bottom: 24px;
+          }
+
+          .start-content h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #2c3e50;
+          }
+
+          .start-content p {
+            font-size: 1.2rem;
+            color: #6c757d;
+            margin-bottom: 32px;
+            line-height: 1.6;
+          }
+
+          .course-features {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 24px 0;
+            flex-wrap: wrap;
+          }
+
+          .feature {
+            padding: 8px 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #495057;
+            border: 1px solid #e9ecef;
+          }
+
+          /* Button Components */
+          .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(0,123,255,0.3);
+          }
+
+          .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(0,123,255,0.4);
+          }
+
+          .btn-primary.large {
+            padding: 18px 36px;
+            font-size: 1.1rem;
+          }
+
+          .btn-control {
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+          }
+
+          .btn-control:hover:not(:disabled) {
+            background: #545b62;
+          }
+
+          .btn-control:disabled {
+            background: #dee2e6;
+            color: #6c757d;
+            cursor: not-allowed;
+          }
+
+          .btn-control.primary {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+          }
+
+          .btn-reset {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+          }
+
+          /* Player Layout */
+          .player {
+            min-height: 100vh;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .player-header {
+            background: white;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+
+          .player-header h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            color: #2c3e50;
+          }
+
+          .player-header p {
+            color: #6c757d;
+            margin: 0;
+            font-size: 1rem;
+          }
+
+          .progress-bar {
+            background: #e9ecef;
+            height: 6px;
+            position: relative;
+          }
+
+          .progress-fill {
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            height: 100%;
+            transition: width 0.5s ease;
+          }
+
+          .progress-text {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            color: #495057;
+            font-weight: 600;
+            background: white;
+            padding: 2px 8px;
+            border-radius: 8px;
+          }
+
+          .player-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+          }
+
+          .navigation {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e9ecef;
+            padding: 24px 16px;
+            overflow-y: auto;
+          }
+
+          .navigation h3 {
+            margin: 0 0 20px 0;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: 600;
+          }
+
+          .nav-item {
+            width: 100%;
+            text-align: left;
+            padding: 16px;
+            border-radius: 8px;
+            border: none;
+            background: #f8f9fa;
+            color: #495057;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+          }
+
+          .nav-item:hover {
+            background: #e9ecef;
+          }
+
+          .nav-item.active {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+          }
+
+          .nav-item.completed {
+            background: #e8f5e8;
+          }
+
+          .nav-icon {
+            font-size: 1.5rem;
+            min-width: 32px;
+          }
+
+          .nav-content {
+            flex: 1;
+          }
+
+          .nav-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+          }
+
+          .nav-status {
+            font-size: 0.8rem;
+            opacity: 0.8;
+          }
+
+          .slide-container {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #fafbfc;
+          }
+
+          .slide {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 700px;
+            min-height: 400px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+          }
+
+          .slide-header {
+            text-align: center;
+            margin-bottom: 32px;
+          }
+
+          .slide-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+          }
+
+          .slide-header h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+          }
+
+          .slide-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .regular-content {
+            font-size: 1.2rem;
+            line-height: 1.7;
+            color: #495057;
+            text-align: center;
+          }
+
+          .player-controls {
+            background: white;
+            border-top: 1px solid #e9ecef;
+            padding: 20px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          }
+
+          /* Responsive Design */
+          @media (max-width: 768px) {
+            .start-content {
+              padding: 32px 24px;
+              margin: 16px;
+            }
+
+            .course-features {
+              flex-direction: column;
+              align-items: center;
+            }
+
+            .player-header {
+              padding: 16px 20px;
+              flex-direction: column;
+              gap: 12px;
+            }
+
+            .player-content {
+              flex-direction: column;
+            }
+
+            .navigation {
+              width: 100%;
+              border-right: none;
+              border-bottom: 1px solid #e9ecef;
+              max-height: 200px;
+            }
+
+            .slide-container {
+              padding: 20px;
+            }
+
+            .slide {
+              padding: 32px 24px;
+              min-height: 300px;
+            }
+
+            .player-controls {
+              padding: 16px 20px;
+              flex-direction: column;
+              gap: 16px;
+            }
+          }
+          EOF
           /* Reset and base styles */
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { 
@@ -2312,6 +2450,37 @@ jobs:
           );
           EOF
 
+          # Verify player CSS was created
+          if [ ! -f "player/src/App.css" ]; then
+            echo "❌ Failed to create player/src/App.css"
+            exit 1
+          fi
+          echo "✅ Created player/src/App.css ($(wc -l < player/src/App.css) lines)"
+
+      - name: "Verify all required files"
+        run: |
+          echo "Verifying project structure..."
+          
+          # Check editor files
+          for file in "editor/package.json" "editor/public/index.html" "editor/src/index.tsx" "editor/src/App.tsx" "editor/src/App.css"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing: $file"
+              exit 1
+            fi
+            echo "✅ Found: $file"
+          done
+          
+          # Check player files
+          for file in "player/package.json" "player/public/index.html" "player/src/index.tsx" "player/src/App.tsx" "player/src/App.css"; do
+            if [ ! -f "$file" ]; then
+              echo "❌ Missing: $file"
+              exit 1
+            fi
+            echo "✅ Found: $file"
+          done
+          
+          echo "All required files created successfully!"
+
       - name: "Setup Node.js for dependency resolution"
         uses: actions/setup-node@v4
         with:
@@ -2319,9 +2488,27 @@ jobs:
 
       - name: "Generate package-lock.json files"
         run: |
-          # Install dependencies to generate lock files
-          cd editor && npm install
-          cd ../player && npm install
+          echo "Installing dependencies and generating lock files..."
+          
+          # Install editor dependencies
+          cd editor
+          npm install --no-package-lock
+          npm install  # This will generate package-lock.json
+          echo "✅ Generated editor/package-lock.json"
+          
+          # Install player dependencies  
+          cd ../player
+          npm install --no-package-lock
+          npm install  # This will generate package-lock.json
+          echo "✅ Generated player/package-lock.json"
+          
+          # Verify lock files exist
+          if [ ! -f "../editor/package-lock.json" ] || [ ! -f "package-lock.json" ]; then
+            echo "❌ Failed to generate package-lock.json files"
+            exit 1
+          fi
+          
+          echo "Lock files generated successfully!"
 
       - name: "Upload project structure"
         uses: actions/upload-artifact@v4
@@ -2357,12 +2544,51 @@ jobs:
       - name: "Install dependencies"
         working-directory: ${{ matrix.app }}
         run: |
+          echo "Installing dependencies for ${{ matrix.app }}..."
           npm ci
+          
           # Verify installation
           if [ ! -f "node_modules/.bin/react-scripts" ]; then
-            echo "Installing react-scripts manually..."
+            echo "❌ react-scripts not found, installing manually..."
             npm install react-scripts --save
           fi
+          
+          echo "✅ Dependencies installed successfully"
+          echo "Checking critical packages:"
+          ls -la node_modules/.bin/react-scripts || echo "react-scripts not found"
+          npm list react react-dom react-scripts --depth=0 || echo "Some packages missing"
+
+      - name: "Pre-build verification"
+        working-directory: ${{ matrix.app }}
+        run: |
+          echo "Verifying build environment for ${{ matrix.app }}..."
+          
+          # Check package.json
+          if [ ! -f "package.json" ]; then
+            echo "❌ package.json not found"
+            exit 1
+          fi
+          
+          # Check src files
+          if [ ! -f "src/App.tsx" ]; then
+            echo "❌ src/App.tsx not found"
+            exit 1
+          fi
+          
+          if [ ! -f "src/index.tsx" ]; then
+            echo "❌ src/index.tsx not found"
+            exit 1
+          fi
+          
+          # Check public files
+          if [ ! -f "public/index.html" ]; then
+            echo "❌ public/index.html not found"
+            exit 1
+          fi
+          
+          echo "✅ All required files present"
+          echo "Directory structure:"
+          find . -type f -name "*.tsx" -o -name "*.json" -o -name "*.html" | head -10
 
       - name: "Build application"
         working-directory: ${{ matrix.app }}
@@ -2374,11 +2600,40 @@ jobs:
 
       - name: "Verify build output"
         run: |
+          echo "Verifying build output for ${{ matrix.app }}..."
+          
           if [ -d "${{ matrix.app }}/build" ]; then
             echo "✅ Build successful for ${{ matrix.app }}"
+            echo "Build directory contents:"
             ls -la ${{ matrix.app }}/build/
+            
+            # Check for essential files
+            if [ -f "${{ matrix.app }}/build/index.html" ]; then
+              echo "✅ index.html found"
+            else
+              echo "❌ index.html missing"
+              exit 1
+            fi
+            
+            if [ -d "${{ matrix.app }}/build/static" ]; then
+              echo "✅ static directory found"
+              echo "Static files:"
+              find "${{ matrix.app }}/build/static" -type f | head -10
+            else
+              echo "❌ static directory missing"
+              exit 1
+            fi
+            
           else
-            echo "❌ Build failed for ${{ matrix.app }}"
+            echo "❌ Build failed for ${{ matrix.app }} - build directory not found"
+            echo "Contents of ${{ matrix.app }} directory:"
+            ls -la ${{ matrix.app }}/
+            
+            if [ -f "${{ matrix.app }}/npm-debug.log" ]; then
+              echo "NPM Debug Log:"
+              cat "${{ matrix.app }}/npm-debug.log"
+            fi
+            
             exit 1
           fi
 
