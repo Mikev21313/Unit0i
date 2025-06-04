@@ -45,12 +45,11 @@ jobs:
             "dependencies": {
               "react": "^18.2.0",
               "react-dom": "^18.2.0",
-              "react-router-dom": "^6.20.0",
+              "react-router-dom": "^6.8.1",
               "react-scripts": "5.0.1",
               "typescript": "^4.9.5",
-              "@types/react": "^18.2.0",
-              "@types/react-dom": "^18.2.0",
-              "@types/react-router-dom": "^6.20.0"
+              "@types/react": "^18.0.28",
+              "@types/react-dom": "^18.0.11"
             },
             "scripts": {
               "start": "react-scripts start",
@@ -92,8 +91,8 @@ jobs:
               "react-dom": "^18.2.0",
               "react-scripts": "5.0.1",
               "typescript": "^4.9.5",
-              "@types/react": "^18.2.0",
-              "@types/react-dom": "^18.2.0"
+              "@types/react": "^18.0.28",
+              "@types/react-dom": "^18.0.11"
             },
             "scripts": {
               "start": "react-scripts start",
@@ -2313,6 +2312,17 @@ jobs:
           );
           EOF
 
+      - name: "Setup Node.js for dependency resolution"
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: "Generate package-lock.json files"
+        run: |
+          # Install dependencies to generate lock files
+          cd editor && npm install
+          cd ../player && npm install
+
       - name: "Upload project structure"
         uses: actions/upload-artifact@v4
         with:
@@ -2342,16 +2352,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: '${{ matrix.app }}/package.json'
+          cache-dependency-path: '${{ matrix.app }}/package-lock.json'
 
       - name: "Install dependencies"
         working-directory: ${{ matrix.app }}
         run: |
-          npm install --legacy-peer-deps
+          npm ci
           # Verify installation
           if [ ! -f "node_modules/.bin/react-scripts" ]; then
             echo "Installing react-scripts manually..."
-            npm install react-scripts --save --legacy-peer-deps
+            npm install react-scripts --save
           fi
 
       - name: "Build application"
